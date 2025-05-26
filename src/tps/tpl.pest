@@ -1,0 +1,132 @@
+// Whitespace
+COMMENT    = _{ "//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+WHITESPACE = _{ " " }
+
+// Program
+program = { SOI ~ ((instruction) ~ (NEWLINE)*)+ ~ EOI }
+
+// Instruction
+instruction = {
+    no_operand_instruction
+  | one_reg_operand_instruction
+  | one_any_operand_instruction
+  | two_reg_any_operand_instruction
+  | two_any_reg_operand_instruction
+  | two_reg_reg_operand_instruction
+  | two_any_any_operand_instruction
+  | three_reg_any_any_operand_instruction
+  | three_any_any_any_operand_instruction
+}
+
+// No operands
+no_operand_instruction = {
+    ("PUSHX" | "POPX" | "SCR" | "RECV" | "TXBS" | "RXBS" | "WRX" | "WTX" | "HLT" | "RSUB" | "INCA" | "DECA" | "INCX" | "DECX" | "INCY" | "DECY")
+}
+
+// One operand (register only)
+one_reg_operand_instruction = { one_reg_instructions ~ register }
+
+one_reg_instructions = { "POP" | "PEEK" | "RSP" | "DPWW" | "DPRW" }
+
+// One operand (any value)
+one_any_operand_instruction = {
+    one_any_operand_instructions ~ any_value
+}
+
+one_any_operand_instructions = { "PUSH" | "NOT" | "LDA" | "STA" | "SLP" | "DPWH" | "JMP" | "GSUB" }
+
+// Two operands (register, any value)
+two_reg_any_operand_instruction = {
+    two_reg_any_operand_instructions ~ register ~ "," ~ any_value
+}
+
+two_reg_any_operand_instructions = { "DPR" | "APR" | "LDR" | "LDM" | "LDX" | "LDXI" | "BREZ" | "BRNZ" }
+
+// Two operands (any value, register)
+two_any_reg_operand_instruction = {
+    two_any_reg_operand_instructions ~ any_value ~ "," ~ register
+}
+
+two_any_reg_operand_instructions = {
+    "STR"
+  | "STX"
+  | "STXI"
+}
+
+// Two operands (register, register)
+two_reg_reg_operand_instruction = {
+    two_reg_reg_operand_instructions ~ register ~ "," ~ register
+}
+
+two_reg_reg_operand_instructions = { "RCY" | "RMV" }
+
+// Two operands (any value, any value)
+two_any_any_operand_instruction = {
+    two_any_any_operand_instructions ~ any_value ~ "," ~ any_value
+}
+
+two_any_any_operand_instructions = {
+    "XMIT"
+  | "ADD"
+  | "SUB"
+  | "MUL"
+  | "DIV"
+  | "MOD"
+  | "AND"
+  | "OR"
+  | "XOR"
+  | "SHLA"
+  | "SHRA"
+  | "STM"
+  | "DPW"
+  | "APW"
+  | "APWH"
+  | "BEZ"
+  | "BNZ"
+}
+
+// Three operands (register, any value, any value)
+three_reg_any_any_operand_instruction = {
+    three_reg_any_any_operand_instructions ~ register ~ "," ~ any_value ~ "," ~ any_value
+}
+
+three_reg_any_any_operand_instructions = {
+    "SHLR"
+  | "SHLC"
+  | "SHRR"
+  | "SHRC"
+  | "ROL"
+  | "ROR"
+}
+
+// Three operands (any value, any value, any value)
+three_any_any_any_operand_instruction = {
+    three_any_any_any_operand_instructions ~ any_value ~ "," ~ any_value ~ "," ~ any_value
+}
+
+three_any_any_any_operand_instructions = {
+    "BEQ"
+  | "BNE"
+  | "BGE"
+  | "BLE"
+  | "BGT"
+  | "BLT"
+  | "BREQ"
+  | "BRNE"
+  | "BRGE"
+  | "BRLE"
+  | "BRGT"
+  | "BRLT"
+}
+
+// Any value can be a register or a number
+any_value = _{ register | number }
+
+// Register
+register = { "A" | "X" | "Y" | "R0" | "R1" | "R2" | "R3" | "R4" | "R5" | "R6" }
+
+// Numbers
+number         = _{ hex_number | binary_number | decimal_number }
+hex_number     =  { "0x" ~ ASCII_HEX_DIGIT+ }
+binary_number  =  { "0b" ~ ASCII_BIN_DIGIT+ }
+decimal_number =  { ASCII_DIGIT+ }

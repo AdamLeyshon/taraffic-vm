@@ -1,0 +1,21 @@
+[package]
+name = "tls"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+strum = { version = "0.27.1" }
+strum_macros = "0.27.1"
+pest = "2.7.8"
+pest_derive = "2.7.8"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+ratatui = "0.26.1"
+crossterm = "0.27.0"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "basic_benchmark"
+harness = false
