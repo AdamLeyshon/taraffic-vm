@@ -10,7 +10,7 @@ Currently, the repo houses my in-house development and debugging tools for the c
 
 ## RGAL - Rudimentary Game Assembly Language
 
-You can read more about RGAL in its dedicated [documentation](./rgal/rgal.md) file
+You can read more about RGAL in its dedicated [documentation](src/rgal/rgal.md) file
 
 Essentially, it is a language influenced by IC10, MIPS and 6502 assembly instructions,
 created specifically to target the TPU.
