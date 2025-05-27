@@ -87,18 +87,6 @@ pub fn op_rmv(tpu: &mut TPU, operand_1: &Register, operand_2: &Register) -> Exec
     ExecuteResult::PCAdvance
 }
 
-pub fn op_str(tpu: &mut TPU, target: &OperandValueType, source: Register) -> ExecuteResult {
-    // Get the address and value
-    let address = tpu.get_operand_value(target) as usize;
-    let value = tpu.read_register(source);
-
-    // Store the value in memory
-    tpu.write_ram(address, value);
-
-    // Return ExecuteResult::Continue to indicate no error
-    ExecuteResult::PCAdvance
-}
-
 /// Load a value into a register
 pub fn op_ldr(tpu: &mut TPU, target: &Register, source: &OperandValueType) -> ExecuteResult {
     // Get the value

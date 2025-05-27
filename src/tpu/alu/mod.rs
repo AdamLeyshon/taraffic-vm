@@ -43,7 +43,7 @@ pub fn op_sub(tpu: &mut TPU, left: &Register, right: &Register) -> ExecuteResult
 pub fn op_mul(tpu: &mut TPU, left: &Register, right: &Register) -> ExecuteResult {
     let a = tpu.read_register(*left);
     let b = tpu.read_register(*right);
-    let result = a.wrapping_sub(b);
+    let result = a.wrapping_mul(b);
     tpu.write_register(Register::A, result);
     ExecuteResult::PCAdvance
 }

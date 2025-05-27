@@ -63,21 +63,21 @@ pub struct ExecutionState {
 impl fmt::Display for TpuState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Helper function to format u16 as hex with leading zeros, split into 4-char blocks
-        fn format_u16_hex(value: u16) -> String {
-            format!("{:04x}", value)
-        }
-
-        // Helper function to format an array of u16 values
-        fn format_u16_array<const N: usize>(arr: &[u16; N]) -> String {
-            let mut result = String::new();
-            for (i, &value) in arr.iter().enumerate() {
-                if i > 0 && i % 4 == 0 {
-                    result.push('\n');
-                }
-                result.push_str(&format!("{:04x} ", value));
-            }
-            result
-        }
+        // fn format_u16_hex(value: u16) -> String {
+        //     format!("{:04x}", value)
+        // }
+        // 
+        // // Helper function to format an array of u16 values
+        // fn format_u16_array<const N: usize>(arr: &[u16; N]) -> String {
+        //     let mut result = String::new();
+        //     for (i, &value) in arr.iter().enumerate() {
+        //         if i > 0 && i % 4 == 0 {
+        //             result.push('\n');
+        //         }
+        //         result.push_str(&format!("{:04x} ", value));
+        //     }
+        //     result
+        // }
 
         // UTF-8 box drawing characters
         let h_line = "─";

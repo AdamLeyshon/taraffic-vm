@@ -245,7 +245,7 @@ pub fn op_jsr(tpu: &mut TPU, target: &OperandValueType) -> ExecuteResult {
 
     let result = set_program_counter_conditionally(tpu, true, address as usize);
 
-    if matches!(result, ExecuteResult::PCAdvance) {
+    if matches!(result, ExecuteResult::PCModified) {
         // Only push the return address if we've validated the landing address
         // And modified the program counter
         tpu.push(old_pc as u16);

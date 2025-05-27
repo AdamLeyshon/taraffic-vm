@@ -95,14 +95,6 @@ pub fn decode_op_slc(shift: &OperandValueType) -> DecodeResult {
     }
 }
 
-pub fn decode_op_shla(shift: &OperandValueType) -> DecodeResult {
-    // Calculate the number of clock cycles
-    let cycles = TPU::check_operand_cost(&[shift]) + 2;
-    DecodeResult {
-        cycles,
-        call_every_cycle: false,
-    }
-}
 
 pub fn decode_op_slr(shift: &OperandValueType) -> DecodeResult {
     let cycles = TPU::check_operand_cost(&[shift]) + 2;
@@ -114,14 +106,6 @@ pub fn decode_op_slr(shift: &OperandValueType) -> DecodeResult {
 }
 
 pub fn decode_op_src(shift: &OperandValueType) -> DecodeResult {
-    let cycles = TPU::check_operand_cost(&[shift]) + 2;
-    DecodeResult {
-        cycles,
-        call_every_cycle: false,
-    }
-}
-
-pub fn decode_op_shra(shift: &OperandValueType) -> DecodeResult {
     let cycles = TPU::check_operand_cost(&[shift]) + 2;
     DecodeResult {
         cycles,

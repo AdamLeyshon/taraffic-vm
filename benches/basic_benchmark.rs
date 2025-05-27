@@ -1,13 +1,11 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use tls::shared::{Operand, Register};
-use tls::tpu::{TPU, TpuState, create_basic_tpu_config};
-use strum::EnumCount;
-use tls::shared::{AnalogPin, DigitalPin};
-use tls::tps::parse_program;
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use tls::shared::Register;
+use tls::rgal::parse_program;
+use tls::tpu::create_basic_tpu_config;
 
 fn add_benchmark(c: &mut Criterion) {
     // Benchmark adding two constants
-    let add_program = "ADD 5, 3\nJMP 0";
+    let add_program = "LDR X, 5\nLDR Y,3\nADD X, Y\nJMP 2";
     let parsed_program = parse_program(add_program).unwrap();
     let mut tpu = create_basic_tpu_config(parsed_program);
     c.bench_function("add_constants", |b| {
@@ -17,7 +15,8 @@ fn add_benchmark(c: &mut Criterion) {
         })
     });
 
-    let blink_program = r#"LDA 10
+    let blink_program = r#"
+        LDR A, 10
         LDR X, 0x5555
         PUSH A
         DPWW X
@@ -26,7 +25,7 @@ fn add_benchmark(c: &mut Criterion) {
         DECA
         BEZ 9, A
         JMP 2
-        JMP 0"#;
+        LDR A, 255"#;
     let parsed_program = parse_program(blink_program).unwrap();
     let mut tpu = create_basic_tpu_config(parsed_program);
     c.bench_function("blink_program", |b| {

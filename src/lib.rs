@@ -1,3 +1,3 @@
-pub mod tps;
+pub mod rgal;
 pub mod tpu;
 pub mod shared;

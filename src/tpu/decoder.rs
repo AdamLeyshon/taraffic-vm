@@ -1,8 +1,8 @@
-use std::rc::Rc;
 use crate::shared::{DecodeResult, Instruction};
 use crate::tpu::flow::decode;
 use crate::tpu::{TPU, mmu};
 use crate::tpu::{alu, io_matrix};
+use std::rc::Rc;
 use tracing::trace;
 
 pub fn decode(instruction: &Rc<Instruction>) -> DecodeResult {
@@ -47,8 +47,8 @@ pub fn decode(instruction: &Rc<Instruction>) -> DecodeResult {
         Instruction::RCY(_, _) => mmu::decode::decode_op_rcy(),
         Instruction::RMV(_, _) => mmu::decode::decode_op_rmv(),
         Instruction::LDR(target, source) => mmu::decode::decode_op_ldr(target, source),
-        Instruction::LDO(target, source, _) => mmu::decode::decode_op_ldr(target, source),
-        Instruction::LDOI(target, source, _) => mmu::decode::decode_op_ldr(target, source),
+        Instruction::LDO(_, source, _) => mmu::decode::decode_op_ldo(source),
+        Instruction::LDOI(_, source, _) => mmu::decode::decode_op_ldoi(source),
         Instruction::STM(_, source) => mmu::decode::decode_op_stm(source),
         Instruction::STMO(_, source, _) => mmu::decode::decode_op_stmo(source),
         Instruction::SMOI(_, source, _) => mmu::decode::decode_op_smoi(source),

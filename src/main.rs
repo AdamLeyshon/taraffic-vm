@@ -1,5 +1,5 @@
 mod shared;
-mod tps;
+mod rgal;
 mod tpu;
 
 use crate::shared::{AnalogPin, DigitalPin, Register};
@@ -13,7 +13,7 @@ use ratatui::{
     Frame, Terminal,
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
-    text::{Line, Span},
+
     widgets::{Block, Borders, Paragraph},
 };
 use std::{
@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     //     .init();
 
     // Create app state
-    let program = tps::parse_program(
+    let program = rgal::parse_program(
         r#"
         LDR A, 10
         LDR X, 0x5555

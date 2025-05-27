@@ -12,17 +12,17 @@ mod value_value_opcodes;
 mod value_value_reg;
 
 use crate::shared::{Instruction, OperandValueType, Register};
-use crate::tps::no_operands::parse_no_operand_opcodes;
-use crate::tps::reg_opcode::parse_single_register_operand_opcodes;
-use crate::tps::reg_reg_opcodes::parse_two_register_operand_opcodes;
-use crate::tps::reg_reg_value_opcodes::parse_two_register_value_operand_opcodes;
-use crate::tps::reg_value_opcodes::parse_register_value_operand_opcodes;
-use crate::tps::reg_value_reg_opcodes::parse_register_value_register_operand_opcodes;
-use crate::tps::value_opcodes::parse_single_value_operand_opcodes;
-use crate::tps::value_reg_opcodes::parse_value_register_operand_opcodes;
-use crate::tps::value_reg_value_opcodes::parse_value_register_value_operand_opcodes;
-use crate::tps::value_value_opcodes::parse_two_value_operand_opcodes;
-use crate::tps::value_value_reg::parse_value_value_register_operand_opcodes;
+use crate::rgal::no_operands::parse_no_operand_opcodes;
+use crate::rgal::reg_opcode::parse_single_register_operand_opcodes;
+use crate::rgal::reg_reg_opcodes::parse_two_register_operand_opcodes;
+use crate::rgal::reg_reg_value_opcodes::parse_two_register_value_operand_opcodes;
+use crate::rgal::reg_value_opcodes::parse_register_value_operand_opcodes;
+use crate::rgal::reg_value_reg_opcodes::parse_register_value_register_operand_opcodes;
+use crate::rgal::value_opcodes::parse_single_value_operand_opcodes;
+use crate::rgal::value_reg_opcodes::parse_value_register_operand_opcodes;
+use crate::rgal::value_reg_value_opcodes::parse_value_register_value_operand_opcodes;
+use crate::rgal::value_value_opcodes::parse_two_value_operand_opcodes;
+use crate::rgal::value_value_reg::parse_value_value_register_operand_opcodes;
 use pest::error::ErrorVariant;
 use pest::iterators::Pair;
 use pest::{Parser, Position};
@@ -31,12 +31,12 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 #[derive(Parser)]
-#[grammar = "tps/tpl.pest"]
-pub struct TplParser;
+#[grammar = "rgal/rgal.pest"]
+pub struct RgalParser;
 
 // Parse a TPU program from a string
 pub fn parse_program(input: &str) -> Result<Vec<Rc<Instruction>>, pest::error::Error<Rule>> {
-    let pairs = TplParser::parse(Rule::program, input.trim())?;
+    let pairs = RgalParser::parse(Rule::program, input.trim())?;
     let mut instructions = Vec::new();
 
     for pair in pairs {
@@ -56,7 +56,7 @@ pub fn parse_program(input: &str) -> Result<Vec<Rc<Instruction>>, pest::error::E
 
 // Parse a single instruction from a string
 pub fn parse_instruction(input: &str) -> Result<Instruction, pest::error::Error<Rule>> {
-    let pairs = TplParser::parse(Rule::instruction, input)?;
+    let pairs = RgalParser::parse(Rule::instruction, input)?;
 
     for pair in pairs {
         if pair.as_rule() == Rule::instruction {
@@ -498,57 +498,70 @@ mod tests {
     #[test]
     fn test_parse_instruction() {
         let instruction = parse_instruction("PUSH 42").unwrap();
-        assert_eq!(instruction.opcode, Instruction::PUSH);
-        assert_eq!(instruction.operands, vec![Operand::Constant(42)]);
-
+        match instruction {
+            Instruction::PUSH(operand) => {
+                assert_eq!(operand, OperandValueType::Immediate(42));
+            }
+            _ => panic!("Unexpected instruction: {:?}", instruction),
+        }
+    
         let instruction = parse_instruction("POP A").unwrap();
-        assert_eq!(instruction.opcode, Instruction::POP);
-        assert_eq!(instruction.operands, vec![Operand::Register(Register::A)]);
-
-        let instruction = parse_instruction("ADD A, 10").unwrap();
-        assert_eq!(instruction.opcode, Instruction::ADD);
-        assert_eq!(
-            instruction.operands,
-            vec![Operand::Register(Register::A), Operand::Constant(10)]
-        );
-
+        match instruction {
+            Instruction::POP(reg) => {
+                assert_eq!(reg, Register::A);
+            }
+            _ => panic!("Unexpected instruction: {:?}", instruction),
+        }
+    
+        let instruction = parse_instruction("ADD A, X").unwrap();
+        match instruction {
+            Instruction::ADD(reg, operand) => {
+                assert_eq!(reg, Register::A);
+                assert_eq!(operand, Register::X);
+            }
+            _ => panic!("Unexpected instruction: {:?}", instruction),
+        }
+    
         let instruction = parse_instruction("HLT").unwrap();
-        assert_eq!(instruction.opcode, Instruction::HLT);
-        assert_eq!(instruction.operands, vec![]);
-
+        assert_eq!(instruction, Instruction::HLT);
+    
         // Test analog pin operands
         match parse_instruction("APR A, 0") {
             Ok(instruction) => {
-                assert_eq!(instruction.opcode, Instruction::APR);
-                assert_eq!(
-                    instruction.operands,
-                    vec![Operand::Register(Register::A), Operand::Constant(0)]
-                );
+                match instruction {
+                    Instruction::APR(reg, operand) => {
+                        assert_eq!(reg, Register::A);
+                        assert_eq!(operand, OperandValueType::Immediate(0));
+                    }
+                    _ => panic!("Unexpected instruction: {:?}", instruction),
+                }
             }
             Err(e) => {
-                panic!("Failed to parse 'APR A, Analog0': {:?}", e);
+                panic!("Failed to parse 'APR A, 0': {:?}", e);
             }
         }
-
+    
         // Test digital pin operands
         match parse_instruction("DPR A, 0") {
             Ok(instruction) => {
-                assert_eq!(instruction.opcode, Instruction::DPR);
-                assert_eq!(
-                    instruction.operands,
-                    vec![Operand::Register(Register::A), Operand::Constant(0)]
-                );
+                match instruction {
+                    Instruction::DPR(reg, operand) => {
+                        assert_eq!(reg, Register::A);
+                        assert_eq!(operand, OperandValueType::Immediate(0));
+                    }
+                    _ => panic!("Unexpected instruction: {:?}", instruction),
+                }
             }
             Err(e) => {
-                panic!("Failed to parse 'DPR A, Digital0': {:?}", e);
+                panic!("Failed to parse 'DPR A, 0': {:?}", e);
             }
         }
     }
 
     #[test]
     fn test_parse_program() {
-        let program = parse_program("PUSH 42\nPOP A\nADD A, 10\nPUSHX\nSUB R0, R1\nHLT");
-
+        let program = parse_program("PUSH 42\nPOP A\nADD A, X\nNOP\nSUB R0, R1\nHLT");
+    
         let program = match program {
             Ok(program) => program,
             Err(e) => match e.variant {
@@ -566,55 +579,86 @@ mod tests {
                 _ => panic!("Failed to parse program: {:?}", e),
             },
         };
-
+    
         assert_eq!(program.len(), 6);
-        assert_eq!(program[0].opcode, Instruction::PUSH);
-        assert_eq!(program[0].operands, vec![Operand::Constant(42)]);
-        assert_eq!(program[1].opcode, Instruction::POP);
-        assert_eq!(program[1].operands, vec![Operand::Register(Register::A)]);
-        assert_eq!(program[2].opcode, Instruction::ADD);
-        assert_eq!(
-            program[2].operands,
-            vec![Operand::Register(Register::A), Operand::Constant(10)]
-        );
-        assert_eq!(program[3].opcode, Instruction::PUSHX);
-        assert_eq!(program[3].operands, vec![]);
-        assert_eq!(program[4].opcode, Instruction::SUB);
-        assert_eq!(
-            program[4].operands,
-            vec![
-                Operand::Register(Register::R0),
-                Operand::Register(Register::R1)
-            ]
-        );
-        assert_eq!(program[5].opcode, Instruction::HLT);
-        assert_eq!(program[5].operands, vec![]);
-
+        
+        match &*program[0] {
+            Instruction::PUSH(operand) => {
+                assert_eq!(*operand, OperandValueType::Immediate(42));
+            }
+            _ => panic!("Unexpected instruction at index 0: {:?}", program[0]),
+        }
+        
+        match &*program[1] {
+            Instruction::POP(reg) => {
+                assert_eq!(*reg, Register::A);
+            }
+            _ => panic!("Unexpected instruction at index 1: {:?}", program[1]),
+        }
+        
+        match &*program[2] {
+            Instruction::ADD(reg, operand) => {
+                assert_eq!(*reg, Register::A);
+                assert_eq!(*operand, Register::X);
+            }
+            _ => panic!("Unexpected instruction at index 2: {:?}", program[2]),
+        }
+        
+        match &*program[3] {
+            Instruction::NOP => {}
+            _ => panic!("Unexpected instruction at index 3: {:?}", program[3]),
+        }
+        
+        match &*program[4] {
+            Instruction::SUB(reg1, reg2) => {
+                assert_eq!(*reg1, Register::R0);
+                assert_eq!(*reg2, Register::R1);
+            }
+            _ => panic!("Unexpected instruction at index 4: {:?}", program[4]),
+        }
+        
+        match &*program[5] {
+            Instruction::HLT => {}
+            _ => panic!("Unexpected instruction at index 5: {:?}", program[5]),
+        }
+    
         // Test a program with analog and digital pin operations
         let program_str = "APR A, 0\nDPR X, 1\nAPW 2, 42\nDPW 3, 1";
         match parse_program(program_str) {
             Ok(program) => {
                 assert_eq!(program.len(), 4);
-                assert_eq!(program[0].opcode, Instruction::APR);
-                assert_eq!(
-                    program[0].operands,
-                    vec![Operand::Register(Register::A), Operand::Constant(0)]
-                );
-                assert_eq!(program[1].opcode, Instruction::DPR);
-                assert_eq!(
-                    program[1].operands,
-                    vec![Operand::Register(Register::X), Operand::Constant(1)]
-                );
-                assert_eq!(program[2].opcode, Instruction::APW);
-                assert_eq!(
-                    program[2].operands,
-                    vec![Operand::Constant(2), Operand::Constant(42)]
-                );
-                assert_eq!(program[3].opcode, Instruction::DPW);
-                assert_eq!(
-                    program[3].operands,
-                    vec![Operand::Constant(3), Operand::Constant(1)]
-                );
+                
+                match &*program[0] {
+                    Instruction::APR(reg, operand) => {
+                        assert_eq!(*reg, Register::A);
+                        assert_eq!(*operand, OperandValueType::Immediate(0));
+                    }
+                    _ => panic!("Unexpected instruction at index 0: {:?}", program[0]),
+                }
+                
+                match &*program[1] {
+                    Instruction::DPR(reg, operand) => {
+                        assert_eq!(*reg, Register::X);
+                        assert_eq!(*operand, OperandValueType::Immediate(1));
+                    }
+                    _ => panic!("Unexpected instruction at index 1: {:?}", program[1]),
+                }
+                
+                match &*program[2] {
+                    Instruction::APW(pin, value) => {
+                        assert_eq!(*pin, OperandValueType::Immediate(2));
+                        assert_eq!(*value, OperandValueType::Immediate(42));
+                    }
+                    _ => panic!("Unexpected instruction at index 2: {:?}", program[2]),
+                }
+                
+                match &*program[3] {
+                    Instruction::DPW(pin, value) => {
+                        assert_eq!(*pin, OperandValueType::Immediate(3));
+                        assert_eq!(*value, OperandValueType::Immediate(1));
+                    }
+                    _ => panic!("Unexpected instruction at index 3: {:?}", program[3]),
+                }
             }
             Err(e) => {
                 panic!("Failed to parse program: {:?}", e);

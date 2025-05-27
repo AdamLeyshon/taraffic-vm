@@ -1,11 +1,12 @@
-use crate::shared::{Operand, Register};
+use crate::shared::{Register, OperandValueType};
 use crate::tpu::{TPU, create_basic_tpu_config};
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
     use super::*;
-    use crate::shared::{AnalogPin, DigitalPin, Instruction, Instruction};
-    use crate::tps;
+    use crate::shared::{AnalogPin, DigitalPin, Instruction};
+    use crate::rgal;
     use strum::IntoEnumIterator;
 
     #[test]
@@ -16,10 +17,7 @@ mod tests {
 
     #[test]
     fn test_single_instruction() {
-        let mut tpu = create_basic_tpu_config(vec![Instruction {
-            opcode: Instruction::PUSH,
-            operands: vec![Operand::Constant(1)],
-        }]);
+        let mut tpu = create_basic_tpu_config(vec![Rc::new(Instruction::PUSH(OperandValueType::Immediate(1)))]);
 
         tpu.tick();
 
@@ -29,13 +27,10 @@ mod tests {
     #[test]
     fn test_single_instruction_from_str() {
         let program = "PUSH 1";
-        let parsed = tps::parse_program(program).expect("parse failure");
+        let parsed = rgal::parse_program(program).expect("parse failure");
         assert_eq!(
             parsed,
-            vec![Instruction {
-                opcode: Instruction::PUSH,
-                operands: vec![Operand::Constant(1)],
-            }]
+            vec![Rc::new(Instruction::PUSH(OperandValueType::Immediate(1)))]
         );
         let mut tpu = create_basic_tpu_config(parsed);
         tpu.tick();
