@@ -13,7 +13,7 @@ The language should be:
 * Be easy to parse
 * Have minimal overheads for implementation
 
-At the present time, my basic "blink" benchmark achieves approx. 264 Million Instructions/second (MIPS) on my PC. 
+At the present time, my basic "blink" benchmark achieves approx. 264 Million Instructions/second (MIPS) on my PC.
 
 ## What's it used for?
 
@@ -136,36 +136,30 @@ With careful management and attention, you can pass parameters to subroutines by
 
 ### Math operators
 
-Any math operations that result in a value that cannot fit into a 16 bit word, the value to "wrap" around past zero.
+Any math operations that result in a value that cannot fit into a 16-bit word, the value to "wrap" around past zero.
 
 e.g. if there is a value of 65,535 in a register, and you add 9, the result will be 8.
 
 Unless otherwise specified, these instructions store their results in the accumulator (`A`).
 
-| Opcode | Operands | Description                                                                   | Cycle Count |
-|--------|----------|-------------------------------------------------------------------------------|-------------|
-| ADD    | `R`, `R` | Adds the operands                                                             | 2           |
-| SUB    | `R`, `R` | Subtracts operand 2 from operand 1                                            | 2           |
-| MUL    | `R`, `R` | Multiplies the operands                                                       | 4           |
-| DIV    | `R`, `R` | Divides operand 1 by operand 2, quotient goes to `A` and the remainder in `X` | 6           |
-| MOD    | `R`, `R` | Modulo division of operand 1 by operand 2                                     | 6           |
-| AND    | `R`, `R` | Performs a bitwise AND of the operands                                        | 3           |
-| OR     | `R`, `R` | Performs a bitwise OR of the operands                                         | 3           |
-| XOR    | `R`, `R` | Performs a bitwise XOR of the operands                                        | 3           |
-| NOT    | `R`      | Performs a bitwise NOT of the operand                                         | 3           |           
-| INC    | `R`      | Increments in the Register by 1 and stores the Result in `R`                  | 2           |           
-| DEC    | `R`      | Decrements in the Register by 1 and stores the Result in `R`                  | 2           |
+| Opcode | Operands | Description                                                   | Cycle Count |
+|--------|----------|---------------------------------------------------------------|-------------|
+| ADD    | `R`, `R` | Adds the operands                                             | 2           |
+| SUB    | `R`, `R` | Subtracts operand 2 from operand 1                            | 2           |
+| MUL    | `R`, `R` | Multiplies the operands                                       | 4           |
+| DIV    | `R`, `R` | Divides operand 1 by operand 2                                | 6           |
+| MOD    | `R`, `R` | Modulo division of operand 1 by operand 2                     | 6           |
+| AND    | `R`, `R` | Performs a bitwise AND of the operands                        | 3           |
+| OR     | `R`, `R` | Performs a bitwise OR of the operands                         | 3           |
+| XOR    | `R`, `R` | Performs a bitwise XOR of the operands                        | 3           |
+| NOT    | `R`      | Performs a bitwise NOT of the operand                         | 3           |           
+| INC    | `R`      | Increments the value in `R` by 1 and stores the Result in `R` | 2           |           
+| DEC    | `R`      | Decrements the value in `R` by 1 and stores the Result in `R` | 2           |
 
 #### Bitshifting operations
 
 When using operations that bitshift into the accumulator, the bits shifted off the ends of the operand are the bits
 stored in the accumulator.
-
-For example:
-
-* r0 contains `01000001`
-* r1 contains `00000010`
-* `SHLC(r0, r0, r1)` will store `00000100` in r0 and `00000001` in the accumulator.
 
 | Opcode | Operands      | Name                                         | Description                                                                                                | Cycle Count |
 |--------|---------------|----------------------------------------------|------------------------------------------------------------------------------------------------------------|-------------|
@@ -175,8 +169,6 @@ For example:
 | SRC    | `R`, `#`, `#` | Shift Right into Register, Accumulator Carry | Shift the bits of operand 2 right by operand 3 places and store the result in operand 1, carry bits to `A` |             |
 
 #### Rotate operations
-
-Rotating bits by more than seven places makes little sense since the register is only eight bits wide.
 
 | Opcode | Operands      | Description                                                                              | Cycle Count |
 |--------|---------------|------------------------------------------------------------------------------------------|-------------|

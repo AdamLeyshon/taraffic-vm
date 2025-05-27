@@ -1,4 +1,5 @@
-use strum_macros::{Display, EnumCount as EnumCountMacro, EnumIter, EnumString, FromRepr};
+use strum_macros::{EnumCount as EnumCountMacro, EnumIter, EnumString, FromRepr};
+use tls_derive::DisplayInstruction;
 
 /// Enum representing the available registers
 #[derive(Debug, Clone, Copy, FromRepr, EnumIter, EnumString, EnumCountMacro, PartialEq, Eq)]
@@ -14,6 +15,12 @@ pub enum Register {
     R4 = 7,
     R5 = 8,
     R6 = 9,
+}
+
+impl std::fmt::Display for Register {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Debug, Clone, Copy, FromRepr, EnumIter, EnumCountMacro, PartialEq, Eq)]
@@ -52,7 +59,7 @@ pub enum OperandValueType {
 }
 
 /// An instruction, comprising an opcode and operands
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, DisplayInstruction)]
 pub enum Instruction {
     // Stack operations
     /// Push operand to Stack
@@ -166,28 +173,6 @@ impl std::fmt::Display for OperandValueType {
         }
     }
 }
-
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct Instruction {
-//     pub opcode: Opcode,
-//     pub operands: Vec<Operand>,
-// }
-//
-// impl std::fmt::Display for Instruction {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "{}", self.opcode)?;
-//         if !self.operands.is_empty() {
-//             write!(f, " ")?;
-//             for (i, operand) in self.operands.iter().enumerate() {
-//                 if i > 0 {
-//                     write!(f, ", ")?;
-//                 }
-//                 write!(f, "{}", operand)?;
-//             }
-//         }
-//         Ok(())
-//     }
-// }
 
 #[derive(Clone)]
 pub(crate) struct DecodeResult {
