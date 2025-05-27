@@ -6,7 +6,7 @@ use crate::tpu::{TPU, TpuState, create_basic_tpu_config};
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shared::{AnalogPin, DigitalPin, Opcode};
+    use crate::shared::{AnalogPin, DigitalPin, Instruction};
     use strum::EnumCount;
 
     const LOOP_PROGRAM: &'static str = r#"LDA 10
@@ -27,7 +27,7 @@ mod tests {
             digital_pins: [false; DigitalPin::COUNT],
             analog_pin_config: [false; AnalogPin::COUNT],
             digital_pin_config: [true; DigitalPin::COUNT],
-            decoded_opcode: None,
+            current_instruction: None,
             ram: [0; TPU::RAM_SIZE],
             rom: program,
             network_address: 0x1,
@@ -847,7 +847,7 @@ mod tests {
         // Test case 1: Call subroutine
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         let operands = [Operand::Constant(4)]; // Call subroutine at line 4
-        let result = op_gsub(&mut tpu, &operands);
+        let result = op_jsr(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
         assert_eq!(tpu.tpu_state.stack.len(), 1); // Stack has one item
@@ -857,7 +857,7 @@ mod tests {
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 4);
         let operands = [Operand::Register(Register::X)]; // Call subroutine at line 4
-        let result = op_gsub(&mut tpu, &operands);
+        let result = op_jsr(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
         assert_eq!(tpu.tpu_state.stack.len(), 1); // Stack has one item
@@ -866,7 +866,7 @@ mod tests {
         // Test case 3: Error case - call to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         let operands = [Operand::Constant(10)]; // Invalid line
-        let result = op_gsub(&mut tpu, &operands);
+        let result = op_jsr(&mut tpu, &operands);
         assert_eq!(result, true); // Error
         // PC does not advance to the next line because the next jump caused a HLT
         assert_eq!(tpu.tpu_state.program_counter, 0);
@@ -879,7 +879,7 @@ mod tests {
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 4);
         tpu.push(1); // Push return address
         let operands: [Operand; 0] = []; // No operands
-        let result = op_rsub(&mut tpu, &operands);
+        let result = op_rts(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.tpu_state.program_counter, 1); // PC is now at return address
         assert_eq!(tpu.tpu_state.stack.len(), 0); // Stack is empty
@@ -889,7 +889,7 @@ mod tests {
         tpu.push(1); // Push first return address
         tpu.push(2); // Push second return address
         let operands: [Operand; 0] = []; // No operands
-        let result = op_rsub(&mut tpu, &operands);
+        let result = op_rts(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC is now at second return address
         assert_eq!(tpu.tpu_state.stack.len(), 1); // Stack has one item left
@@ -897,7 +897,7 @@ mod tests {
         // Test case 3: Error case - return with empty stack
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 4);
         let operands: [Operand; 0] = []; // No operands
-        let result = op_rsub(&mut tpu, &operands);
+        let result = op_rts(&mut tpu, &operands);
         assert_eq!(result, false); // No error (pop from empty stack returns 0)
         assert_eq!(tpu.tpu_state.program_counter, 0); // PC is set to 0
         assert_eq!(tpu.tpu_state.stack.len(), 0); // Stack is empty

@@ -16,7 +16,7 @@ mod tests {
             digital_pins: [false; DigitalPin::COUNT],
             analog_pin_config: [false; AnalogPin::COUNT],
             digital_pin_config: [false; DigitalPin::COUNT],
-            decoded_opcode: None,
+            current_instruction: None,
             ram: [0; TPU::RAM_SIZE],
             rom: vec![],
             network_address: 0x1,
@@ -446,7 +446,7 @@ mod tests {
             digital_pins: [false; DigitalPin::COUNT],
             analog_pin_config: [false; AnalogPin::COUNT],
             digital_pin_config: [false; DigitalPin::COUNT], // All pins as outputs
-            decoded_opcode: None,
+            current_instruction: None,
             ram: [0; TPU::RAM_SIZE],
             rom: vec![],
             network_address: 0x1,
@@ -491,7 +491,7 @@ mod tests {
             digital_pins: [false; DigitalPin::COUNT],
             analog_pin_config: [false; AnalogPin::COUNT],
             digital_pin_config: [false; DigitalPin::COUNT], // All pins as outputs
-            decoded_opcode: None,
+            current_instruction: None,
             ram: [0; TPU::RAM_SIZE],
             rom: vec![],
             network_address: 0x1,
@@ -535,7 +535,7 @@ mod tests {
             digital_pins: [false; DigitalPin::COUNT],
             analog_pin_config: [false; AnalogPin::COUNT],
             digital_pin_config: [false; DigitalPin::COUNT], // All pins as outputs
-            decoded_opcode: None,
+            current_instruction: None,
             ram: [0; TPU::RAM_SIZE],
             rom: vec![],
             network_address: 0x1,

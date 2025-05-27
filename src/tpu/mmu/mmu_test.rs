@@ -16,7 +16,7 @@ mod tests {
             digital_pins: [false; DigitalPin::COUNT],
             analog_pin_config: [false; AnalogPin::COUNT],
             digital_pin_config: [true; DigitalPin::COUNT],
-            decoded_opcode: None,
+            current_instruction: None,
             ram: [0; TPU::RAM_SIZE],
             rom: vec![],
             network_address: 0x1,
@@ -376,7 +376,7 @@ mod tests {
             Operand::Constant(17), // Base address
             Operand::Register(Register::A),
         ];
-        let result = op_stxi(&mut tpu, &operands);
+        let result = op_srix(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.read_ram(22), 10); // Memory at address 22 now has A's value
         assert_eq!(tpu.read_register(Register::X), 6); // X is incremented
@@ -387,7 +387,7 @@ mod tests {
             Operand::Register(Register::Y), // Base address from Y
             Operand::Register(Register::A),
         ];
-        let result = op_stxi(&mut tpu, &operands);
+        let result = op_srix(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.read_ram(23), 10); // Memory at address 23 now has A's value
         assert_eq!(tpu.read_register(Register::X), 6); // X is incremented
@@ -395,14 +395,14 @@ mod tests {
         // Test case 3: X wrapping around on increment
         let mut tpu = create_tpu_with_registers(10, 65535, 30); // X at max value
         let operands = [Operand::Constant(19), Operand::Register(Register::A)];
-        let result = op_stxi(&mut tpu, &operands);
+        let result = op_srix(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.read_register(Register::X), 0); // X wraps around to 0
 
         // Test case 4: Error case - second operand is not a register
         let mut tpu = create_tpu_with_registers(10, 20, 30);
         let operands = [Operand::Constant(21), Operand::Constant(42)];
-        let result = op_stxi(&mut tpu, &operands);
+        let result = op_srix(&mut tpu, &operands);
         assert_eq!(result, true); // Error
     }
 

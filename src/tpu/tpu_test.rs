@@ -4,7 +4,7 @@ use crate::tpu::{TPU, create_basic_tpu_config};
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shared::{AnalogPin, DigitalPin, Instruction, Opcode};
+    use crate::shared::{AnalogPin, DigitalPin, Instruction, Instruction};
     use crate::tps;
     use strum::IntoEnumIterator;
 
@@ -17,7 +17,7 @@ mod tests {
     #[test]
     fn test_single_instruction() {
         let mut tpu = create_basic_tpu_config(vec![Instruction {
-            opcode: Opcode::PUSH,
+            opcode: Instruction::PUSH,
             operands: vec![Operand::Constant(1)],
         }]);
 
@@ -33,7 +33,7 @@ mod tests {
         assert_eq!(
             parsed,
             vec![Instruction {
-                opcode: Opcode::PUSH,
+                opcode: Instruction::PUSH,
                 operands: vec![Operand::Constant(1)],
             }]
         );

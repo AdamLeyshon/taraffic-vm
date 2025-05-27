@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Create app state
     let program = tps::parse_program(
         r#"
-        LDA 10
+        LDR A, 10
         LDR X, 0x5555
         PUSH A
         DPWW X
@@ -43,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         DECA
         BEZ 9, A
         JMP 2
-        LDA 255"#,
+        LDR A, 255"#,
     )
     .unwrap();
 
@@ -182,7 +182,7 @@ fn ui(f: &mut Frame, tpu: &tpu::TpuState) {
 fn render_cpu_status(f: &mut Frame, tpu: &tpu::TpuState, area: ratatui::layout::Rect) {
     let halted = tpu.halted;
     let program_counter = tpu.program_counter;
-    let wait_cycles = tpu.wait_cycles;
+    let wait_cycles = tpu.execution_state.wait_cycles;
     let text = format!(
         "Program Counter: {:04X}\nWait Cycles: {:04X}\nHalted: {}",
         program_counter, wait_cycles, halted
@@ -259,7 +259,8 @@ fn render_ram(f: &mut Frame, tpu: &tpu::TpuState, area: ratatui::layout::Rect) {
 }
 
 fn render_rom(f: &mut Frame, tpu: &tpu::TpuState, area: ratatui::layout::Rect) {
-    let rom_size = tpu.rom.len();
+    let rom = &tpu.rom;
+    let rom_size = rom.len();
     let program_counter = tpu.program_counter;
 
     let mut text = format!(

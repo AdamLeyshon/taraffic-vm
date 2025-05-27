@@ -67,7 +67,7 @@ PUSH or PEEK out-of-bounds causes a HLT instruction.
 | POP    | `R`      | Stack Pop          | Pops a value off the stack into the register and decrements `SP`, if the stack is empty, returns `0`   | 1-2         |
 | PUSHX  |          | Stack Push X       | Pushes the value in X on to the stack and increases `SP`                                               |             |
 | POPX   |          | Stack Pop X        | Pops a value off the stack into the X register and decrements `SP`, if the stack is empty, returns `0` |             |
-| PEEK   | `R`      | Stack Peek         | Peek at a value on the stack without removing it and store in the register `R`                         |             |                        
+| PEEK   | `R`, `#` | Stack Peek         | Peek at a value on the stack without removing it and store in the register `R`                         |             |                        
 | SCR    |          | Stack Clear        | Clears the stack and resets the stack pointer                                                          |             |                                                     
 | RSP    | `R`      | Read Stack Pointer | Get the current stack pointer and store in register `R`                                                |             |                                               
 
@@ -94,28 +94,28 @@ For example:
 | Opcode | Operands      | Description                                                            | Cycle Count |
 |--------|---------------|------------------------------------------------------------------------|-------------|
 | JMP    | `#`           | Jump absolute                                                          | 1-2         |
-| BEZ    | `#`, `#`      | Branch to operand 1 if operand 2 is zero                               | 1-3         |
-| BNZ    | `#`, `#`      | Branch to operand 1 if operand 2 is not zero                           | 1-3         |         
-| BEQ    | `#`, `#`, `#` | Branch to operand 1 if operand 2 is equal to operand 3                 | 1-4         | 
-| BNE    | `#`, `#`, `#` | Branch to operand 1 if operand 2 is not equal to operand 3             | 1-4         |
-| BGE    | `#`, `#`, `#` | Branch to operand 1 if operand 2 is greater than or equal to operand 3 | 1-4         |
-| BLE    | `#`, `#`, `#` | Branch to operand 1 if operand 2 is less than or equal to operand 3    | 1-4         |
-| BGT    | `#`, `#`, `#` | Branch to operand 1 if operand 2 is greater than operand 3             | 1-4         |
-| BLT    | `#`, `#`, `#` | Branch to operand 1 if operand 2 is less than operand 3                | 1-4         |
+| BEZ    | `#`, `R`      | Branch to operand 1 if register 2 is zero                               | 1-3         |
+| BNZ    | `#`, `R`      | Branch to operand 1 if register 2 is not zero                           | 1-3         |         
+| BEQ    | `#`, `R`, `#` | Branch to operand 1 if register 2 is equal to operand 3                 | 1-4         | 
+| BNE    | `#`, `R`, `#` | Branch to operand 1 if register 2 is not equal to operand 3             | 1-4         |
+| BGE    | `#`, `R`, `#` | Branch to operand 1 if register 2 is greater than or equal to operand 3 | 1-4         |
+| BLE    | `#`, `R`, `#` | Branch to operand 1 if register 2 is less than or equal to operand 3    | 1-4         |
+| BGT    | `#`, `R`, `#` | Branch to operand 1 if register is greater than operand 3              | 1-4         |
+| BLT    | `#`, `R`, `#` | Branch to operand 1 if register 2 is less than operand 3                | 1-4         |
 
 #### Relative Branches
 
 | Opcode | Operands      | Description                                                             | Cycle Count |
 |--------|---------------|-------------------------------------------------------------------------|-------------|
 | JPR    | `#`           | Jump relative                                                           | 1-2         |
-| BREZ   | `#`, `#`      | Branch relative by operand 1 if operand 2 is zero                       | 1-4         |
-| BRNZ   | `#`, `#`      | Branch relative by operand 1 if operand 2 is not zero                   | 1-4         |
-| BREQ   | `#`, `#`, `#` | Branch relative by operand 1 if operand 2 is equal to v                 | 1-4         |
-| BRNE   | `#`, `#`, `#` | Branch relative by operand 1 if operand 2 is not equal to v             | 1-4         |
-| BRGE   | `#`, `#`, `#` | Branch relative by operand 1 if operand 2 is greater than or equal to v | 1-4         |
-| BRLE   | `#`, `#`, `#` | Branch relative by operand 1 if operand 2 is less than or equal to v    | 1-4         |
-| BRGT   | `#`, `#`, `#` | Branch relative by operand 1 if operand 2 is greater than v             | 1-4         |
-| BRLT   | `#`, `#`, `#` | Branch relative by operand 1 if operand 2 is less than v                | 1-4         |
+| BREZ   | `#`, `R`      | Branch relative by operand 1 if operand 2 is zero                       | 1-4         |
+| BRNZ   | `#`, `R`      | Branch relative by operand 1 if operand 2 is not zero                   | 1-4         |
+| BREQ   | `#`, `R`, `#` | Branch relative by operand 1 if operand 2 is equal to v                 | 1-4         |
+| BRNE   | `#`, `R`, `#` | Branch relative by operand 1 if operand 2 is not equal to v             | 1-4         |
+| BRGE   | `#`, `R`, `#` | Branch relative by operand 1 if operand 2 is greater than or equal to v | 1-4         |
+| BRLE   | `#`, `R`, `#` | Branch relative by operand 1 if operand 2 is less than or equal to v    | 1-4         |
+| BRGT   | `#`, `R`, `#` | Branch relative by operand 1 if operand 2 is greater than v             | 1-4         |
+| BRLT   | `#`, `R`, `#` | Branch relative by operand 1 if operand 2 is less than v                | 1-4         |
 
 #### Subroutines
 
@@ -129,8 +129,8 @@ With careful management and attention, you can pass parameters to subroutines by
 
 | Opcode | Operands | Description                                                                    | Cycle Count |
 |--------|----------|--------------------------------------------------------------------------------|-------------|
-| GSUB   | `#`      | Pushes the current PC onto the stack and jumps absolute to the line specified. | 2           |
-| RSUB   |          | Pops the value off the stack and jumps absolute to the value.                  | 2           |
+| JSR    | `#`      | Pushes the current PC onto the stack and jumps absolute to the line specified. | 2           |
+| RTS    |          | Pops the value off the stack and jumps absolute to the value.                  | 2           |
 
 ### Math operators
 
@@ -142,21 +142,17 @@ Unless otherwise specified, these instructions store their results in the accumu
 
 | Opcode | Operands | Description                                                                   | Cycle Count |
 |--------|----------|-------------------------------------------------------------------------------|-------------|
-| ADD    | `#`, `#` | Adds the operands                                                             |
-| SUB    | `#`, `#` | Subtracts operand 2 from operand 1                                            |
-| MUL    | `#`, `#` | Multiplies the operands                                                       |
-| DIV    | `#`, `#` | Divides operand 1 by operand 2, quotient goes to `A` and the remainder in `X` |
-| MOD    | `#`, `#` | Modulo division of operand 1 by operand 2                                     |
-| AND    | `#`, `#` | Performs a bitwise AND of the operands                                        |
-| OR     | `#`, `#` | Performs a bitwise OR of the operands                                         |
-| XOR    | `#`, `#` | Performs a bitwise XOR of the operands                                        |
-| NOT    | `#`      | Performs a bitwise NOT of the operand                                         |
-| INCA   |          | Increments the Accumulator by 1                                               | 1           |           
-| INCX   |          | Increments X by 1                                                             | 1           |
-| INCY   |          | Increments Y by 1                                                             | 1           | 
-| DECA   |          | Decrements A by 1                                                             | 1           |
-| DECX   |          | Decrements A by 1                                                             | 1           |
-| DECY   |          | Decrements A by 1                                                             | 1           |
+| ADD    | `R`, `R` | Adds the operands                                                             | 2           |
+| SUB    | `R`, `R` | Subtracts operand 2 from operand 1                                            | 2           |
+| MUL    | `R`, `R` | Multiplies the operands                                                       | 4           |
+| DIV    | `R`, `R` | Divides operand 1 by operand 2, quotient goes to `A` and the remainder in `X` | 6           |
+| MOD    | `R`, `R` | Modulo division of operand 1 by operand 2                                     | 6           |
+| AND    | `R`, `R` | Performs a bitwise AND of the operands                                        | 3           |
+| OR     | `R`, `R` | Performs a bitwise OR of the operands                                         | 3           |
+| XOR    | `R`, `R` | Performs a bitwise XOR of the operands                                        | 3           |
+| NOT    | `R`      | Performs a bitwise NOT of the operand                                         | 3           |           
+| INC    | `R`      | Increments in the Register by 1 and stores the Result in `R`                  | 2           |           
+| DEC    | `R`      | Decrements in the Register by 1 and stores the Result in `R`                  | 2           |
 
 #### Bitshifting operations
 
@@ -171,12 +167,10 @@ For example:
 
 | Opcode | Operands      | Name                                         | Description                                                                                                | Cycle Count |
 |--------|---------------|----------------------------------------------|------------------------------------------------------------------------------------------------------------|-------------|
-| SHLR   | `R`, `#`, `#` | Shift Left into Register                     | Shift the bits of operand 2 left by operand 3 places and store the result in operand 1                     |             |
-| SHLC   | `R`, `#`, `#` | Shift Left into Register, Accumulator Carry  | Shift the bits of operand 2 left by operand 3 places and store the result in operand 1, carry bits to `A`  |             |
-| SHLA   | `#`, `#`      | Shift Left into Accumulator                  | Shift the bits of operand 1 left by operand 2 places and store the result in accumulator                   |             |
-| SHRR   | `R`, `#`, `#` | Shift Right into Register                    | Shift the bits of operand 2 right by operand 3 places and store the result in operand 1                    |             |
-| SHRC   | `R`, `#`, `#` | Shift Right into Register, Accumulator Carry | Shift the bits of operand 2 right by operand 3 places and store the result in operand 1, carry bits to `A` |             |
-| SHRA   | `#`, `#`      | Shift Right into Accumulator                 | Shift the bits of operand 1 right by operand 2 places and store the result in accumulator                  |             |
+| SLL    | `R`, `#`, `#` | Shift Left into Register                     | Shift the bits of operand 2 left by operand 3 places and store the result in operand 1                     |             |
+| SLC    | `R`, `#`, `#` | Shift Left into Register, Accumulator Carry  | Shift the bits of operand 2 left by operand 3 places and store the result in operand 1, carry bits to `A`  |             |
+| SLR    | `R`, `#`, `#` | Shift Right into Register                    | Shift the bits of operand 2 right by operand 3 places and store the result in operand 1                    |             |
+| SRC    | `R`, `#`, `#` | Shift Right into Register, Accumulator Carry | Shift the bits of operand 2 right by operand 3 places and store the result in operand 1, carry bits to `A` |             |
 
 #### Rotate operations
 
@@ -189,20 +183,16 @@ Rotating bits by more than seven places makes little sense since the register is
 
 ### Memory operations
 
-| Opcode | Operands | Name                           | Description                                                                              | Cycle Count |
-|--------|----------|--------------------------------|------------------------------------------------------------------------------------------|-------------|
-| RCY    | `R`, `R` | Register Copy                  | Copy the value of operand 2 into operand 1,                                              | 2           |
-| RMV    | `R`, `R` | Register Move                  | Move the value of operand 2 into operand 1, leaving the source register as zero          | 3           |
-| STR    | `#`, `R` | Store Register                 | Store value from register `R` into address operand `#`                                   |             |
-| LDR    | `R`, `#` | Load Register                  | Load value from operand `#` into register `R` (Note 1)                                   |             |
-| LDM    | `R`, `#` | Load Memory                    | Load value from address operand `#` into register `R`                                    |             |
-| LDA    | `#`      | Load Accumulator               | Load value from operand into the accumulator                                             |             |
-| LDX    | `R`, `#` | Load with Offset               | Load value from address operand `#` plus offset `X` into register `R`                    |             |
-| LDXI   | `R`, `#` | Load With Offset, Increment X  | Load value from address operand `#` plus offset `X` into register `R` and increment `X`  |             |
-| STM    | `#`, `#` | Store Memory                   | Store value from operand 2 `#` into address operand 1                                    |             |
-| STA    | `#`      | Store Accumulator              | Store value from accumulator into address `#`                                            |             |
-| STX    | `#`, `R` | Store with Offset              | Store value from register `R` into address operand `#` plus offset `X`                   |             |
-| STXI   | `#`, `R` | Store With Offset, Increment X | Store value from register `R` into address operand `#` plus offset `X` and increment `X` |             |
+| Opcode | Operands      | Name                                    | Description                                                                                           | Cycle Count |
+|--------|---------------|-----------------------------------------|-------------------------------------------------------------------------------------------------------|-------------|
+| RCY    | `R`, `R`      | Register Copy                           | Copy the value of operand 2 into operand 1,                                                           | 2           |
+| RMV    | `R`, `R`      | Register Move                           | Move the value of operand 2 into operand 1, leaving the source register as zero                       | 3           |
+| LDR    | `R`, `#`      | Load Register                           | Load value from operand into the register `R`                                                         |             |
+| LDO    | `R`, `#`, `O` | Load Register with Offset               | Load value from address operand `#` plus offset `O` into register `R`                                 |             |
+| LDOI   | `R`, `#`, `O` | Load Register With Offset and Increment | Load value from address operand `#` plus offset from register `O` into register `R` and increment `O` |             |
+| STM    | `#`, `#`      | Store To Memory                         | Store value from operand 2 `#` into address operand 1                                                 |             |
+| STMO   | `#`, `#`, `R` | Store To Memory With Offset             | Store value from operand 2 `#` into address operand 1                                                 |             |
+| SMOI   | `#`, `#`, `R` | Store Memory With Offset and Increment  | Store value from operand 2 `#` into address operand 1 plus offset from register `R` and increment `R` |             |
 
 Note 1: While `LDR` could be used for copying between registers, the microcode of `RCY` and `RMV` is optimised to
 minimise the number of CPU cycles required.
@@ -217,11 +207,11 @@ On implementations where there are fewer than 16 pins, the unused bit values wil
 
 | Opcode | Operands | Name                   | Description                                                                                | Cycle Count |
 |--------|----------|------------------------|--------------------------------------------------------------------------------------------|-------------|
-| DPW    | `#`, `#` | Digital Pin Write      | Sets the pin drom operand 1 to the value of operand 2                                      | 1-3         |         
+| DPW    | `#`, `#` | Digital Pin Write      | Sets the pin from operand 1 to the value of operand 2                                      | 1-3         |         
 | DPWH   | `#`      | Digital Pin Write Hold | Sets the pin `#` to HIGH for 5 cycles, then back to LOW, equivalent to two DPW statements. | 6-7         |
 | DPR    | `R`, `#` | Digital Pin Read       | Put the value of the pin from operand 1 into register `R`                                  | 2           |    
 | DPWW   | `#`      | Digital Pin Write Word | Sets the output pin values based on the bitmask of the operand                             | 2           |
-| RPRW   | `R`      | Digital Pin Read Word  | Read the value of all pins as a 16 bit value into Register R (Note 1)                      | 1           | 
+| DPRW   | `R`      | Digital Pin Read Word  | Read the value of all pins as a 16 bit value into Register R (Note 1)                      | 1           | 
 
 Note 1: This also includes the current state of pins that are set to outputs.
 
@@ -258,9 +248,9 @@ Note 2: Both will be `0` if no packets are waiting.
 
 ### Misc operations
 
-| Opcode | Operands | Name          | Description                                                                                                       | Cycle Count |
-|--------|----------|---------------|-------------------------------------------------------------------------------------------------------------------|-------------|
-| SLP    | `#`      | Sleep         | Sleep for the specified number of cycles, the value can be either a constant or a register which holds the value. | 1+          | 
-| WRX    |          | Wait Receive  | Wait for a packet to be received                                                                                  | 1+          |                                                                               
-| WTX    |          | Wait Transmit | Wait for a packet to be sent                                                                                      | 1+          |                                                                                  
-| HLT    |          | Halt          | Stops the TPU, non-recoverable.                                                                                   | 1           |                                                                                   
+| Opcode | Operands | Name          | Description                                                           | Cycle Count |
+|--------|----------|---------------|-----------------------------------------------------------------------|-------------|
+| NOP    |          | No Operation  | Waits for exactly 2 cycles                                            | 2           |               
+| SLP    | `#`      | Sleep         | Sleep for the specified number of cycles, Equivalent to multiple NOPs | 2+          | 
+| WRX    |          | Wait Receive  | Wait for a packet to be received                                      | 1+          |                                                                               
+| HLT    |          | Halt          | Stops the TPU, non-recoverable.                                       | 1           |                                                                                   

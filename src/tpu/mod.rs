@@ -1,25 +1,21 @@
 mod alu;
-#[cfg(test)]
-mod alu_test;
+mod decoder;
+mod execution;
 mod flow;
-#[cfg(test)]
-mod flow_test;
 mod io_matrix;
-#[cfg(test)]
-mod io_matrix_test;
 mod mmu;
-#[cfg(test)]
-mod mmu_test;
 #[cfg(test)]
 mod tpu_test;
 
 use crate::shared::{
-    AnalogPin, DecodedOpcode, DigitalPin, Instruction, NetPacket, Opcode, Operand, Register,
+    AnalogPin, DecodeResult, DigitalPin, HaltReason, Instruction, NetPacket, Register,
 };
+use crate::shared::{ExecuteResult, OperandValueType};
 use std::collections::VecDeque;
 use std::fmt;
+use std::rc::Rc;
 use strum::{EnumCount, IntoEnumIterator};
-use tracing::trace;
+use tracing::{error, trace};
 
 #[derive(Clone)]
 pub struct TpuState {
@@ -36,7 +32,7 @@ pub struct TpuState {
     /// Memory
     pub ram: [u16; TPU::RAM_SIZE],
     /// The program ROM
-    pub rom: Vec<Instruction>,
+    pub rom: Vec<Rc<Instruction>>,
     /// My network address
     pub network_address: u16,
     /// Queue of incoming packets
@@ -45,15 +41,23 @@ pub struct TpuState {
     pub outgoing_packets: VecDeque<NetPacket>,
     /// Registers (A, X, Y, R1-R6)
     pub registers: [u16; Register::COUNT],
-    /// Track how many cycles are left until the current instruction is finished.
-    pub wait_cycles: u16,
     /// Tracks the current line of program
     pub program_counter: usize,
-    /// This is the function that we execute when `wait_cycles` reaches zero.
-    /// It actually executes the instruction that we previously decoded.
-    pub decoded_opcode: Option<DecodedOpcode>,
     /// Are we in an error state?
     pub halted: bool,
+    /// The state of the current execution (if any)
+    pub execution_state: ExecutionState,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ExecutionState {
+    /// This is the function that we execute when `wait_cycles` reaches zero.
+    /// It actually executes the instruction that we previously decoded.
+    pub instruction: Option<Rc<Instruction>>,
+    /// Track how many cycles are left until the current instruction is finished.
+    pub wait_cycles: u16,
+    /// Should the current instruction be called every cycle until finished?
+    pub execute_each_cycle: bool,
 }
 
 impl fmt::Display for TpuState {
@@ -118,7 +122,7 @@ impl fmt::Display for TpuState {
             f,
             "{} Wait Cycles:     {:04x}       {} Incoming Packets: {:04x}      {}",
             v_line,
-            self.wait_cycles,
+            self.execution_state.wait_cycles,
             v_line,
             self.incoming_packets.len(),
             v_line
@@ -286,17 +290,17 @@ impl TPU {
 
     // Helper function to get a value from an operand
     // Returns a tuple (delay, value) where delay is 1 for register access, 0 for constant
-    pub fn get_operand_value(&self, operand: &Operand) -> u16 {
+    pub fn get_operand_value(&self, operand: &OperandValueType) -> u16 {
         match operand {
-            Operand::Register(reg) => self.read_register(*reg),
-            Operand::Constant(val) => *val,
+            OperandValueType::Register(reg) => self.read_register(*reg),
+            OperandValueType::Immediate(val) => *val,
         }
     }
 
-    pub fn check_operand_cost(operands: &[Operand]) -> u16 {
+    pub fn check_operand_cost(operands: &[&OperandValueType]) -> u16 {
         let mut cost = 0;
         for operand in operands {
-            if matches!(operand, &Operand::Register(_)) {
+            if matches!(operand, OperandValueType::Register(_)) {
                 cost += 1;
             }
         }
@@ -308,7 +312,7 @@ impl TPU {
         network_address: u16,
         analog_pin_config: [bool; AnalogPin::COUNT],
         digital_pin_config: [bool; DigitalPin::COUNT],
-        program: Vec<Instruction>,
+        program: Vec<Rc<Instruction>>,
     ) -> Self {
         let mut tpu = Self {
             tpu_state: TpuState {
@@ -317,16 +321,19 @@ impl TPU {
                 digital_pins: [false; DigitalPin::COUNT],
                 analog_pin_config,
                 digital_pin_config,
-                decoded_opcode: None,
                 ram: [0; TPU::RAM_SIZE],
                 rom: program,
                 network_address,
                 incoming_packets: VecDeque::new(),
                 outgoing_packets: VecDeque::new(),
                 registers: [0; Register::COUNT],
-                wait_cycles: 0,
                 program_counter: 0,
                 halted: false,
+                execution_state: ExecutionState {
+                    instruction: None,
+                    wait_cycles: 0,
+                    execute_each_cycle: false,
+                },
             },
         };
 
@@ -334,8 +341,8 @@ impl TPU {
         tpu
     }
 
-    pub fn new_from_state(tpu_state: TpuState) -> Self {
-        Self { tpu_state }
+    pub fn new_from_state(tpu_state: TpuState) -> TPU {
+        TPU { tpu_state }
     }
 
     fn reset(&mut self) {
@@ -350,8 +357,8 @@ impl TPU {
         // Clear halt
         self.tpu_state.halted = false;
 
-        // Clear wait
-        self.tpu_state.wait_cycles = 0;
+        // Clear execution state
+        self.tpu_state.execution_state = ExecutionState::default();
 
         // Reset registers
         for register in Register::iter() {
@@ -379,18 +386,31 @@ impl TPU {
     /// Allow the CPU to execute for a single clock cycle
     pub fn tick(&mut self) {
         trace!("TICK");
-        self.tpu_state.wait_cycles = self.tpu_state.wait_cycles.saturating_sub(1);
-        if self.tpu_state.halted || self.tpu_state.wait_cycles > 0 {
+        self.decrement_wait_cycles();
+
+        if self.tpu_state.halted {
+            return;
+        }
+
+        // If we don't need to execute each cycle, and there's still wait cycles left, do nothing
+        if !self.tpu_state.execution_state.execute_each_cycle
+            && self.tpu_state.execution_state.wait_cycles > 0
+        {
             return;
         }
 
         // If we have a decoded instruction ready, execute it now
-        if let Some(decoded_opcode) = self.tpu_state.decoded_opcode.take() {
-            self.execute_opcode(&decoded_opcode);
+        if let Some(instruction) = self.tpu_state.execution_state.instruction.take() {
+            self.execute_instruction(instruction, self.tpu_state.execution_state.wait_cycles);
             return;
         }
 
-        self.decode_next()
+        self.fetch_instruction()
+    }
+
+    fn decrement_wait_cycles(&mut self) {
+        self.tpu_state.execution_state.wait_cycles =
+            self.tpu_state.execution_state.wait_cycles.saturating_sub(1);
     }
 
     /// Executes until the next instruction is complete
@@ -402,150 +422,57 @@ impl TPU {
         }
     }
 
-    fn decode_next(&mut self) {
+    fn fetch_instruction(&mut self) {
         let instruction = self.tpu_state.rom[self.tpu_state.program_counter].clone();
-        let opcode = instruction.opcode;
-        let operands = &instruction.operands;
-        trace!("DECODE: {:?} {:?}", opcode, operands);
+        let result = decoder::decode(&instruction);
 
-        let result = match opcode {
-            // Stack operations
-            Opcode::PUSH => mmu::decode_op_push(operands),
-            Opcode::POP => mmu::decode_op_pop(operands),
-            Opcode::PUSHX => mmu::decode_op_pushx(operands),
-            Opcode::POPX => mmu::decode_op_popx(operands),
-            Opcode::PEEK => mmu::decode_op_peek(operands),
-            Opcode::SCR => mmu::decode_op_scr(operands),
-            Opcode::RSP => mmu::decode_op_rsp(operands),
-
-            // Networking
-            Opcode::XMIT => io_matrix::decode_op_xmit(operands),
-            Opcode::RECV => io_matrix::decode_op_recv(operands),
-            Opcode::TXBS => io_matrix::decode_op_txbs(operands),
-            Opcode::RXBS => io_matrix::decode_op_rxbs(operands),
-
-            // Arithmetic
-            Opcode::ADD => alu::decode_op_add(operands),
-            Opcode::SUB => alu::decode_op_sub(operands),
-            Opcode::MUL => alu::decode_op_mul(operands),
-            Opcode::DIV => alu::decode_op_div(operands),
-            Opcode::MOD => alu::decode_op_mod(operands),
-            Opcode::AND => alu::decode_op_and(operands),
-            Opcode::OR => alu::decode_op_or(operands),
-            Opcode::XOR => alu::decode_op_xor(operands),
-            Opcode::NOT => alu::decode_op_not(operands),
-            Opcode::INCA => alu::decode_op_inca(operands),
-            Opcode::INCX => alu::decode_op_incx(operands),
-            Opcode::INCY => alu::decode_op_incy(operands),
-            Opcode::DECA => alu::decode_op_deca(operands),
-            Opcode::DECX => alu::decode_op_decx(operands),
-            Opcode::DECY => alu::decode_op_decy(operands),
-
-            // Bitwise
-            Opcode::SHLR => alu::decode_op_shlr(operands),
-            Opcode::SHLC => alu::decode_op_shlc(operands),
-            Opcode::SHLA => alu::decode_op_shla(operands),
-            Opcode::SHRR => alu::decode_op_shrr(operands),
-            Opcode::SHRC => alu::decode_op_shrc(operands),
-            Opcode::SHRA => alu::decode_op_shra(operands),
-            Opcode::ROL => alu::decode_op_rol(operands),
-            Opcode::ROR => alu::decode_op_ror(operands),
-
-            // Memory/Register Data movement
-            Opcode::RCY => mmu::decode_op_rcy(operands),
-            Opcode::RMV => mmu::decode_op_rmv(operands),
-            Opcode::STR => mmu::decode_op_str(operands),
-            Opcode::LDR => mmu::decode_op_ldr(operands),
-            Opcode::LDM => mmu::decode_op_ldm(operands),
-            Opcode::LDA => mmu::decode_op_lda(operands),
-            Opcode::LDX => mmu::decode_op_ldx(operands),
-            Opcode::LDXI => mmu::decode_op_ldxi(operands),
-            Opcode::STM => mmu::decode_op_stm(operands),
-            Opcode::STA => mmu::decode_op_sta(operands),
-            Opcode::STX => mmu::decode_op_stx(operands),
-            Opcode::STXI => mmu::decode_op_stxi(operands),
-
-            // Digital I/O
-            Opcode::DPW => io_matrix::decode_op_dpw(operands),
-            Opcode::DPWH => io_matrix::decode_op_dpwh(operands),
-            Opcode::DPR => io_matrix::decode_op_dpr(operands),
-            Opcode::DPWW => io_matrix::decode_op_dpww(operands),
-            Opcode::DPRW => io_matrix::decode_op_dprw(operands),
-
-            // Analog I/O
-            Opcode::APW => io_matrix::decode_op_apw(operands),
-            Opcode::APWH => io_matrix::decode_op_apwh(operands),
-            Opcode::APR => io_matrix::decode_op_apr(operands),
-
-            // Misc
-            Opcode::SLP => self.decode_op_slp(operands),
-            Opcode::WRX => self.decode_op_wrx(operands),
-            Opcode::WTX => self.decode_op_wtx(operands),
-            Opcode::HLT => self.decode_op_hlt(operands),
-
-            // Branching - Absolute
-            Opcode::JMP => flow::decode_op_jmp(operands),
-            Opcode::BEZ => flow::decode_op_bez(operands),
-            Opcode::BNZ => flow::decode_op_bnz(operands),
-            Opcode::BEQ => flow::decode_op_beq(operands),
-            Opcode::BNE => flow::decode_op_bne(operands),
-            Opcode::BGE => flow::decode_op_bge(operands),
-            Opcode::BLE => flow::decode_op_ble(operands),
-            Opcode::BGT => flow::decode_op_bgt(operands),
-            Opcode::BLT => flow::decode_op_blt(operands),
-
-            // Branching - Relative
-            Opcode::JPR => flow::decode_op_jpr(operands),
-            Opcode::BREZ => flow::decode_op_brez(operands),
-            Opcode::BRNZ => flow::decode_op_brnz(operands),
-            Opcode::BREQ => flow::decode_op_breq(operands),
-            Opcode::BRNE => flow::decode_op_brne(operands),
-            Opcode::BRGE => flow::decode_op_brge(operands),
-            Opcode::BRLE => flow::decode_op_brle(operands),
-            Opcode::BRGT => flow::decode_op_brgt(operands),
-            Opcode::BRLT => flow::decode_op_brlt(operands),
-
-            // Subroutines
-            Opcode::GSUB => flow::decode_op_gsub(operands),
-            Opcode::RSUB => flow::decode_op_rsub(operands),
-        };
-
-        if let Ok(instruction) = result {
-            // This instruction executes in a single clock cycle, so do it now.
-            if instruction.cycles == 1 {
-                self.execute_opcode(&instruction);
-                return;
-            } else {
-                // Subtract 1 from the number of cycles to wait because this counts as a cycle
-                self.tpu_state.wait_cycles = instruction.cycles - 1;
-                self.tpu_state.decoded_opcode = Some(instruction);
-            }
+        // This instruction executes in a single clock cycle, so do it now.
+        if result.cycles == 1 {
+            self.execute_instruction(instruction, 1);
+            return;
         } else {
-            // Failed to decode the instruction
-            self.tpu_state.halted = true;
+            // Subtract 1 from the number of cycles to wait because this counts as a cycle
+            self.tpu_state.execution_state.wait_cycles = result.cycles - 1;
+            self.tpu_state.execution_state.execute_each_cycle = result.call_every_cycle;
+            self.tpu_state.execution_state.instruction = Some(instruction);
         }
     }
 
-    fn execute_opcode(&mut self, instruction: &DecodedOpcode) {
-        if (instruction.function)(self, &*instruction.operands) {
-            self.tpu_state.halted = true;
-            return;
+    fn execute_instruction(&mut self, instruction: Rc<Instruction>, wait_cycles: u16) {
+        let result = execution::execute(self, &instruction, wait_cycles);
+
+        match result {
+            ExecuteResult::PCAdvance => {
+                // Clear the execution state
+                self.tpu_state.execution_state.wait_cycles = 0;
+                self.tpu_state.execution_state.instruction = None;
+                self.tpu_state.execution_state.execute_each_cycle = false;
+
+                // Advance the program counter
+                // Check that the program counter is not going out of bounds
+                if self.tpu_state.program_counter + 1 > (self.tpu_state.rom.len() - 1) {
+                    self.tpu_state.halted = true;
+                }
+                self.tpu_state.program_counter += 1;
+            }
+            ExecuteResult::PCModified => {
+                self.tpu_state.execution_state.wait_cycles = 0;
+                self.tpu_state.execution_state.instruction = None;
+                self.tpu_state.execution_state.execute_each_cycle = false;
+                return;
+            }
+            ExecuteResult::NoPCAdvance => {
+                self.tpu_state.execution_state.instruction = Some(instruction)
+            }
+            ExecuteResult::Halt(reason) => {
+                error!("TPU Halted: {reason:?}");
+                self.tpu_state.halted = true
+            }
         }
-        // The next clock cycle will decode a new instruction (if any)
-        self.tpu_state.wait_cycles = 0;
-        self.tpu_state.decoded_opcode = None;
-        if instruction.pc_modified {
-            return;
-        }
-        // Check that the program counter is not going out of bounds
-        if self.tpu_state.program_counter + 1 > (self.tpu_state.rom.len() - 1) {
-            self.tpu_state.halted = true;
-        }
-        self.tpu_state.program_counter += 1;
     }
 
     pub fn busy(&self) -> bool {
-        self.tpu_state.wait_cycles > 0
+        self.tpu_state.execution_state.wait_cycles > 0
     }
 
     pub fn halted(&self) -> bool {
@@ -648,6 +575,10 @@ impl TPU {
         }
     }
 
+    pub fn read_rom(&self) -> &Vec<Rc<Instruction>> {
+        &self.tpu_state.rom
+    }
+
     /// Send a packet
     fn send_packet(&mut self, address: u16, data: u16) {
         self.tpu_state.outgoing_packets.push_back(NetPacket {
@@ -672,118 +603,67 @@ impl TPU {
     }
 
     // Misc operations
-    fn op_slp(_: &mut TPU, _: &[Operand]) -> bool {
+    fn op_nop() -> ExecuteResult {
         // Sleep is handled by the wait_cycles mechanism
         // No additional action needed here
-        false
+        ExecuteResult::PCAdvance
     }
 
-    fn decode_op_slp(&mut self, operands: &[Operand]) -> Result<DecodedOpcode, ()> {
-        // Check operand count
-        if operands.len() != 1 {
-            return Err(());
+    fn op_slp(&mut self, value: &OperandValueType) -> ExecuteResult {
+        // Get the sleep duration
+        let delay = TPU::check_operand_cost(&[value]).saturating_add(self.get_operand_value(value));
+        self.tpu_state.execution_state.wait_cycles = delay;
+        ExecuteResult::PCAdvance
+    }
+
+    fn decode_op_nop() -> DecodeResult {
+        DecodeResult {
+            cycles: 1,
+            call_every_cycle: false,
         }
-
-        // Get the sleep duration and delay
-        let delay =
-            TPU::check_operand_cost(operands).saturating_add(self.get_operand_value(&operands[0]));
-
-        let inst = DecodedOpcode {
-            operands: operands.to_vec(),
-            function: TPU::op_slp,
-            cycles: delay,
-            pc_modified: false,
-        };
-
-        // Return the decoded instruction
-        Ok(inst)
     }
 
-    fn op_wrx(tpu: &mut TPU, _: &[Operand]) -> bool {
+    fn decode_op_slp() -> DecodeResult {
+        DecodeResult {
+            cycles: 1, // We'll modify this in the op_slp
+            call_every_cycle: false,
+        }
+    }
+
+    fn op_wrx(tpu: &mut TPU) -> ExecuteResult {
         // Check if there are any incoming packets
         if tpu.tpu_state.incoming_packets.is_empty() {
-            // No packets, do nothing
+            // Keep resetting the wait cycles until we get a packet
+            // If none ever arrives, we're basically stuck in an infinite loop
+            tpu.tpu_state.execution_state.wait_cycles = 1;
+            ExecuteResult::NoPCAdvance
         } else {
-            // Packets available, do nothing
+            tpu.tpu_state.execution_state.wait_cycles = 4;
+            io_matrix::op_recv(tpu);
+            ExecuteResult::PCAdvance
         }
-
-        // Return false to indicate no error
-        false
     }
 
-    fn decode_op_wrx(&mut self, operands: &[Operand]) -> Result<DecodedOpcode, ()> {
-        // Check operand count
-        if !operands.is_empty() {
-            return Err(());
+    fn decode_op_wrx() -> DecodeResult {
+        DecodeResult {
+            cycles: 65535,
+            call_every_cycle: true,
         }
+    }
 
-        // Create the decoded instruction
-        let inst = DecodedOpcode {
-            operands: operands.to_vec(),
-            function: TPU::op_wrx,
+    fn op_hlt() -> ExecuteResult {
+        ExecuteResult::Halt(HaltReason::HLTOpcode)
+    }
+
+    fn decode_op_hlt() -> DecodeResult {
+        DecodeResult {
             cycles: 1,
-            pc_modified: false,
-        };
-
-        // Return the decoded instruction
-        Ok(inst)
-    }
-
-    fn op_wtx(tpu: &mut TPU, _: &[Operand]) -> bool {
-        // Check if there are any outgoing packets
-        if tpu.tpu_state.outgoing_packets.is_empty() {
-            // No packets, do nothing
-        } else {
-            // Packets waiting to be sent, do nothing
+            call_every_cycle: false,
         }
-
-        // Return false to indicate no error
-        false
-    }
-
-    fn decode_op_wtx(&mut self, operands: &[Operand]) -> Result<DecodedOpcode, ()> {
-        // Check operand count
-        if !operands.is_empty() {
-            return Err(());
-        }
-
-        // Create the decoded instruction
-        let inst = DecodedOpcode {
-            operands: operands.to_vec(),
-            function: TPU::op_wtx,
-            cycles: 1,
-            pc_modified: false,
-        };
-
-        // Return the decoded instruction
-        Ok(inst)
-    }
-
-    fn op_hlt(_: &mut TPU, _: &[Operand]) -> bool {
-        // Return false to indicate no error
-        true
-    }
-
-    fn decode_op_hlt(&mut self, operands: &[Operand]) -> Result<DecodedOpcode, ()> {
-        // Check operand count
-        if !operands.is_empty() {
-            return Err(());
-        }
-
-        // Create the decoded instruction
-        let inst = DecodedOpcode {
-            operands: operands.to_vec(),
-            function: TPU::op_hlt,
-            cycles: 1,
-            pc_modified: false,
-        };
-
-        // Return the decoded instruction
-        Ok(inst)
     }
 }
 
-pub fn create_basic_tpu_config(program: Vec<Instruction>) -> TPU {
+pub fn create_basic_tpu_config<'t>(program: Vec<Rc<Instruction>>) -> TPU {
     TPU::new(
         0x1,
         [false; AnalogPin::COUNT],

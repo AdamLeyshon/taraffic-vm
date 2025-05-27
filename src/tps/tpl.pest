@@ -15,32 +15,35 @@ instruction = {
   | two_reg_reg_operand_instruction
   | two_any_any_operand_instruction
   | three_reg_any_any_operand_instruction
-  | three_any_any_any_operand_instruction
+  | three_any_reg_any_operand_instruction
+  | three_reg_reg_any_operand_instruction
+  | three_any_any_reg_operand_instruction
+  | three_reg_any_reg_operand_instruction
 }
 
 // No operands
 no_operand_instruction = {
-    ("PUSHX" | "POPX" | "SCR" | "RECV" | "TXBS" | "RXBS" | "WRX" | "WTX" | "HLT" | "RSUB" | "INCA" | "DECA" | "INCX" | "DECX" | "INCY" | "DECY")
+    ("SCR" | "RECV" | "TXBS" | "RXBS" | "NOP" | "WRX" | "HLT" | "TRS" )
 }
 
 // One operand (register only)
 one_reg_operand_instruction = { one_reg_instructions ~ register }
 
-one_reg_instructions = { "POP" | "PEEK" | "RSP" | "DPWW" | "DPRW" }
+one_reg_instructions = { "POP" | "RSP" | "NOT" | "INC" | "DEC" | "DPRW" }
 
 // One operand (any value)
 one_any_operand_instruction = {
     one_any_operand_instructions ~ any_value
 }
 
-one_any_operand_instructions = { "PUSH" | "NOT" | "LDA" | "STA" | "SLP" | "DPWH" | "JMP" | "GSUB" }
+one_any_operand_instructions = { "PUSH" | "DPWW" | "JMP" | "JPR" | "JSR" | "SLP" }
 
 // Two operands (register, any value)
 two_reg_any_operand_instruction = {
     two_reg_any_operand_instructions ~ register ~ "," ~ any_value
 }
 
-two_reg_any_operand_instructions = { "DPR" | "APR" | "LDR" | "LDM" | "LDX" | "LDXI" | "BREZ" | "BRNZ" }
+two_reg_any_operand_instructions = { "PEEK" | "XMIT" | "LDR" | "DPR" | "APR" }
 
 // Two operands (any value, register)
 two_any_reg_operand_instruction = {
@@ -48,9 +51,10 @@ two_any_reg_operand_instruction = {
 }
 
 two_any_reg_operand_instructions = {
-    "STR"
-  | "STX"
-  | "STXI"
+    "BEZ"
+  | "BNZ"
+  | "BREZ"
+  | "BRNZ"
 }
 
 // Two operands (register, register)
@@ -58,16 +62,8 @@ two_reg_reg_operand_instruction = {
     two_reg_reg_operand_instructions ~ register ~ "," ~ register
 }
 
-two_reg_reg_operand_instructions = { "RCY" | "RMV" }
-
-// Two operands (any value, any value)
-two_any_any_operand_instruction = {
-    two_any_any_operand_instructions ~ any_value ~ "," ~ any_value
-}
-
-two_any_any_operand_instructions = {
-    "XMIT"
-  | "ADD"
+two_reg_reg_operand_instructions = {
+   "ADD"
   | "SUB"
   | "MUL"
   | "DIV"
@@ -75,36 +71,33 @@ two_any_any_operand_instructions = {
   | "AND"
   | "OR"
   | "XOR"
-  | "SHLA"
-  | "SHRA"
-  | "STM"
-  | "DPW"
-  | "APW"
-  | "APWH"
-  | "BEZ"
-  | "BNZ"
+  | "RCY"
+  | "RMV" }
+
+// Two operands (any value, any value)
+two_any_any_operand_instruction = {
+    two_any_any_operand_instructions ~ any_value ~ "," ~ any_value
 }
 
-// Three operands (register, any value, any value)
+two_any_any_operand_instructions = {
+    "STM" | "DPW" | "APW"
+}
+
+// Three operands (register, register, any value)
 three_reg_any_any_operand_instruction = {
-    three_reg_any_any_operand_instructions ~ register ~ "," ~ any_value ~ "," ~ any_value
+    three_reg_any_any_operand_instructions ~ register ~ "," ~ register ~ "," ~ any_value
 }
 
 three_reg_any_any_operand_instructions = {
-    "SHLR"
-  | "SHLC"
-  | "SHRR"
-  | "SHRC"
-  | "ROL"
-  | "ROR"
+   "XXX"
 }
 
-// Three operands (any value, any value, any value)
-three_any_any_any_operand_instruction = {
-    three_any_any_any_operand_instructions ~ any_value ~ "," ~ any_value ~ "," ~ any_value
+// Three operands (any value, register , any value)
+three_any_reg_any_operand_instruction = {
+    three_any_reg_any_operand_instructions ~ any_value ~ "," ~ register ~ "," ~ any_value
 }
 
-three_any_any_any_operand_instructions = {
+three_any_reg_any_operand_instructions = {
     "BEQ"
   | "BNE"
   | "BGE"
@@ -118,6 +111,41 @@ three_any_any_any_operand_instructions = {
   | "BRGT"
   | "BRLT"
 }
+
+// Three operands (any value, register , any value)
+three_reg_reg_any_operand_instruction = {
+    three_reg_reg_any_operand_instructions ~ register ~ "," ~ register ~ "," ~ any_value
+}
+
+three_reg_reg_any_operand_instructions = {
+    "SLL"
+    | "SLC"
+    | "SLR"
+    | "SRC"
+    | "ROL"
+    | "ROR"
+}
+
+// Three operands (value, value, register)
+three_any_any_reg_operand_instruction = {
+    three_any_any_reg_operand_instructions ~ any_value ~ "," ~ any_value ~ "," ~ register
+}
+
+three_any_any_reg_operand_instructions = {
+    "STMO"
+  | "SMOI"
+}
+
+// Three operands (register, value, register)
+three_reg_any_reg_operand_instruction = {
+    three_reg_any_reg_operand_instructions ~ any_value ~ "," ~ any_value ~ "," ~ register
+}
+
+three_reg_any_reg_operand_instructions = {
+    "LDO"
+  | "LDOI"
+}
+
 
 // Any value can be a register or a number
 any_value = _{ register | number }

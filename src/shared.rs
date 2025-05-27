@@ -1,8 +1,7 @@
-use crate::tpu::TPU;
 use strum_macros::{Display, EnumCount as EnumCountMacro, EnumIter, EnumString, FromRepr};
 
 /// Enum representing the available registers
-#[derive(Debug, Clone, Copy, FromRepr, EnumIter, EnumCountMacro, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, FromRepr, EnumIter, EnumString, EnumCountMacro, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Register {
     A = 0,
@@ -46,153 +45,175 @@ pub struct NetPacket {
     pub data: u16,
 }
 
-#[derive(Debug, Clone, PartialEq, Copy, EnumString, Display)]
-pub enum Opcode {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OperandValueType {
+    Immediate(u16),
+    Register(Register),
+}
+
+/// An instruction, comprising an opcode and operands
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
+pub enum Instruction {
     // Stack operations
-    PUSH,
-    POP,
-    PUSHX,
-    POPX,
-    PEEK,
+    /// Push operand to Stack
+    PUSH(OperandValueType),
+    /// Pop a value from the stack into Register
+    POP(Register),
+    /// Copy the value from Stack without removing it into Register
+    PEEK(Register, OperandValueType),
+    /// Stack Clear
     SCR,
-    RSP,
+    /// Read Stack Pointer into Register
+    RSP(Register),
 
     // Network operations
-    XMIT,
+    XMIT(Register, OperandValueType),
     RECV,
     TXBS,
     RXBS,
 
     // Math operators
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    MOD,
-    AND,
-    OR,
-    XOR,
-    NOT,
-    INCA,
-    INCX,
-    INCY,
-    DECA,
-    DECX,
-    DECY,
+    ADD(Register, Register),
+    SUB(Register, Register),
+    MUL(Register, Register),
+    DIV(Register, Register),
+    MOD(Register, Register),
+    AND(Register, Register),
+    OR(Register, Register),
+    XOR(Register, Register),
+    NOT(Register),
+    INC(Register),
+    DEC(Register),
 
     // Bitshifting operations
-    SHLR,
-    SHLC,
-    SHLA,
-    SHRR,
-    SHRC,
-    SHRA,
+    SLL(Register, Register, OperandValueType),
+    SLC(Register, Register, OperandValueType),
+    SLR(Register, Register, OperandValueType),
+    SRC(Register, Register, OperandValueType),
 
     // Rotate operations
-    ROL,
-    ROR,
+    ROL(Register, Register, OperandValueType),
+    ROR(Register, Register, OperandValueType),
 
     // Memory operations
-    RCY,
-    RMV,
-    STR,
-    LDR,
-    LDM,
-    LDA,
-    LDX,
-    LDXI,
-    STM,
-    STA,
-    STX,
-    STXI,
+    /// Register Copy
+    RCY(Register, Register),
+    /// Register Move
+    RMV(Register, Register),
+    /// Load Register
+    LDR(Register, OperandValueType),
+    /// Load Register w/Offset
+    LDO(Register, OperandValueType, Register),
+    /// Load Register w/Offset+Inc
+    LDOI(Register, OperandValueType, Register),
+    /// Store Memory
+    STM(OperandValueType, OperandValueType),
+    /// Store Memory w/Offset
+    STMO(OperandValueType, OperandValueType, Register),
+    /// Store Memory w/Offset+Inc
+    SMOI(OperandValueType, OperandValueType, Register),
 
     // Digital Pin operations
-    DPW,
-    DPWH,
-    DPR,
-    DPWW,
-    DPRW,
+    DPW(OperandValueType, OperandValueType),
+    //DPWH(OperandValueType),
+    DPR(Register, OperandValueType),
+    DPWW(OperandValueType),
+    DPRW(Register),
 
     // Analog Pin operations
-    APW,
-    APWH,
-    APR,
+    APW(OperandValueType, OperandValueType),
+    //APWH(OperandValueType, OperandValueType),
+    APR(Register, OperandValueType),
 
     // Misc operations
-    SLP,
+    NOP,
+    SLP(OperandValueType),
     WRX,
-    WTX,
     HLT,
 
     // Branching
-    JMP,
-    BEZ,
-    BNZ,
-    BEQ,
-    BNE,
-    BGE,
-    BLE,
-    BGT,
-    BLT,
+    JMP(OperandValueType),
+    BEZ(OperandValueType, Register),
+    BNZ(OperandValueType, Register),
+    BEQ(OperandValueType, Register, OperandValueType),
+    BNE(OperandValueType, Register, OperandValueType),
+    BGE(OperandValueType, Register, OperandValueType),
+    BLE(OperandValueType, Register, OperandValueType),
+    BGT(OperandValueType, Register, OperandValueType),
+    BLT(OperandValueType, Register, OperandValueType),
 
     // Relative Branches
-    JPR,
-    BREZ,
-    BRNZ,
-    BREQ,
-    BRNE,
-    BRGE,
-    BRLE,
-    BRGT,
-    BRLT,
+    JPR(OperandValueType),
+    BREZ(OperandValueType, Register),
+    BRNZ(OperandValueType, Register),
+    BREQ(OperandValueType, Register, OperandValueType),
+    BRNE(OperandValueType, Register, OperandValueType),
+    BRGE(OperandValueType, Register, OperandValueType),
+    BRLE(OperandValueType, Register, OperandValueType),
+    BRGT(OperandValueType, Register, OperandValueType),
+    BRLT(OperandValueType, Register, OperandValueType),
 
     // Subroutines
-    GSUB,
-    RSUB,
+    JSR(OperandValueType),
+    RTS,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Operand {
-    Register(Register),
-    Constant(u16),
-}
-
-impl std::fmt::Display for Operand {
+impl std::fmt::Display for OperandValueType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Operand::Register(reg) => write!(f, "{}", format!("{:?}", reg)),
-            Operand::Constant(val) => write!(f, "{:04X}", val),
+            OperandValueType::Register(reg) => write!(f, "{}", format!("{:?}", reg)),
+            OperandValueType::Immediate(val) => write!(f, "{:04X}", val),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Instruction {
-    pub opcode: Opcode,
-    pub operands: Vec<Operand>,
-}
-
-impl std::fmt::Display for Instruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.opcode)?;
-        if !self.operands.is_empty() {
-            write!(f, " ")?;
-            for (i, operand) in self.operands.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{}", operand)?;
-            }
-        }
-        Ok(())
-    }
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct Instruction {
+//     pub opcode: Opcode,
+//     pub operands: Vec<Operand>,
+// }
+//
+// impl std::fmt::Display for Instruction {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}", self.opcode)?;
+//         if !self.operands.is_empty() {
+//             write!(f, " ")?;
+//             for (i, operand) in self.operands.iter().enumerate() {
+//                 if i > 0 {
+//                     write!(f, ", ")?;
+//                 }
+//                 write!(f, "{}", operand)?;
+//             }
+//         }
+//         Ok(())
+//     }
+// }
 
 #[derive(Clone)]
-pub(crate) struct DecodedOpcode {
-    pub(crate) operands: Vec<Operand>,
-    pub(crate) function: fn(&mut TPU, operands: &[Operand]) -> bool,
+pub(crate) struct DecodeResult {
+    /// How many cycles to wait before executing
     pub(crate) cycles: u16,
-    /// Whether this instruction has modified the program counter
-    pub(crate) pc_modified: bool,
+    pub(crate) call_every_cycle: bool,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ExecuteResult {
+    /// Advance the program counter and decrement the wait cycle counter
+    PCAdvance,
+    /// Don't advance the program counter, but still decrement the wait cycle counter
+    NoPCAdvance,
+    /// The instruction was executed, the program counter was modified, fetched the next instruction
+    PCModified,
+    /// Halt the CPU
+    Halt(HaltReason),
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum HaltReason {
+    Div0,
+    HLTOpcode,
+    InvalidPC,
+    InvalidValue,
+    StackOverflow,
+    IndexOutOfRange,
 }

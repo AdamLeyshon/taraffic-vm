@@ -16,7 +16,7 @@ mod tests {
             digital_pins: [false; DigitalPin::COUNT],
             analog_pin_config: [false; AnalogPin::COUNT],
             digital_pin_config: [true; DigitalPin::COUNT],
-            decoded_opcode: None,
+            current_instruction: None,
             ram: [0; TPU::RAM_SIZE],
             rom: Vec::new(),
             network_address: 0x1,
@@ -354,7 +354,7 @@ mod tests {
             Operand::Constant(0b00000001),
             Operand::Constant(2),
         ];
-        let result = op_shlr(&mut tpu, &operands);
+        let result = op_sll(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.read_register(Register::A), 0b00000100);
 
@@ -365,7 +365,7 @@ mod tests {
             Operand::Register(Register::X),
             Operand::Register(Register::Y),
         ];
-        let result = op_shlr(&mut tpu, &operands);
+        let result = op_sll(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.read_register(Register::A), 0b00000100);
 
@@ -376,7 +376,7 @@ mod tests {
             Operand::Constant(0b00000001),
             Operand::Constant(2),
         ];
-        let result = op_shlr(&mut tpu, &operands);
+        let result = op_sll(&mut tpu, &operands);
         assert_eq!(result, true); // Error
     }
 
@@ -389,7 +389,7 @@ mod tests {
             Operand::Constant(0b1000000000000001),
             Operand::Constant(2),
         ];
-        let result = op_shlc(&mut tpu, &operands);
+        let result = op_slc(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.read_register(Register::X), 0b00000100); // Shifted value
         assert_eq!(tpu.read_register(Register::A), 0b00000010); // Carry bits
@@ -401,7 +401,7 @@ mod tests {
             Operand::Register(Register::X),
             Operand::Register(Register::Y),
         ];
-        let result = op_shlc(&mut tpu, &operands);
+        let result = op_slc(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.read_register(Register::R0), 0b00000100); // Shifted value
         assert_eq!(tpu.read_register(Register::A), 0b00000010); // Carry bits
@@ -434,7 +434,7 @@ mod tests {
             Operand::Constant(0b10000000),
             Operand::Constant(2),
         ];
-        let result = op_shrr(&mut tpu, &operands);
+        let result = op_slr(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.read_register(Register::A), 0b00100000);
 
@@ -445,7 +445,7 @@ mod tests {
             Operand::Register(Register::X),
             Operand::Register(Register::Y),
         ];
-        let result = op_shrr(&mut tpu, &operands);
+        let result = op_slr(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.read_register(Register::A), 0b00100000);
     }
@@ -459,7 +459,7 @@ mod tests {
             Operand::Constant(0b10000011),
             Operand::Constant(2),
         ];
-        let result = op_shrc(&mut tpu, &operands);
+        let result = op_src(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.read_register(Register::X), 0b00100000); // Shifted value
         assert_eq!(tpu.read_register(Register::A), 0b1100000000000000); // Carry bits
@@ -471,7 +471,7 @@ mod tests {
             Operand::Register(Register::X),
             Operand::Register(Register::Y),
         ];
-        let result = op_shrc(&mut tpu, &operands);
+        let result = op_src(&mut tpu, &operands);
         assert_eq!(result, false); // No error
         assert_eq!(tpu.read_register(Register::A), 0b1100000000000000); // Carry bits
     }
@@ -613,22 +613,11 @@ mod tests {
 
         let empty_operands: [Operand; 0] = [];
 
-        op_inca(&mut tpu, &empty_operands);
+        op_inc(&mut tpu, &empty_operands);
         assert_eq!(tpu.read_register(Register::A), 11);
 
-        op_incx(&mut tpu, &empty_operands);
-        assert_eq!(tpu.read_register(Register::X), 21);
-
-        op_incy(&mut tpu, &empty_operands);
-        assert_eq!(tpu.read_register(Register::Y), 31);
-
-        op_deca(&mut tpu, &empty_operands);
+        op_dec(&mut tpu, &empty_operands);
         assert_eq!(tpu.read_register(Register::A), 10);
 
-        op_decx(&mut tpu, &empty_operands);
-        assert_eq!(tpu.read_register(Register::X), 20);
-
-        op_decy(&mut tpu, &empty_operands);
-        assert_eq!(tpu.read_register(Register::Y), 30);
     }
 }
