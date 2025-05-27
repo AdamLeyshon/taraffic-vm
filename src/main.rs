@@ -33,14 +33,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Create app state
     let program = rgal::parse_program(
         r#"
-        LDR A, 10
-        LDR X, 0x5555
+        LDR A, 0
+        LDR X, 0b100000001
+        
         DPWW X
         ROL X, X, 1
-        DEC A
-        BEZ 7, A
-        JMP 2
-        HLT"#,
+        JMP 1"#,
     )
     .unwrap();
 
@@ -76,11 +74,14 @@ fn run_app<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     tpu: &mut tpu::TPU,
 ) -> io::Result<()> {
-    let tick_rate = Duration::from_millis(250);
+    let tick_rate = Duration::from_millis(50);
     let mut last_tick = Instant::now();
+    let step_rate = Duration::from_millis(50); // 2 Hz for continuous running
+    let mut last_step = Instant::now();
+    let mut continuous_running = false;
 
     loop {
-        terminal.draw(|f| ui(f, tpu.state()))?;
+        terminal.draw(|f| ui(f, tpu.state(), continuous_running))?;
 
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
@@ -96,9 +97,21 @@ fn run_app<B: ratatui::backend::Backend>(
                     KeyCode::Char(' ') => {
                         tpu.tick();
                     }
+                    KeyCode::Char('r') | KeyCode::Char('R') => {
+                        continuous_running = true;
+                    }
+                    KeyCode::Char('b') | KeyCode::Char('B') => {
+                        continuous_running = false;
+                    }
                     _ => {}
                 }
             }
+        }
+
+        // Handle continuous running mode
+        if continuous_running && last_step.elapsed() >= step_rate {
+            tpu.step();
+            last_step = Instant::now();
         }
 
         if last_tick.elapsed() >= tick_rate {
@@ -107,7 +120,7 @@ fn run_app<B: ratatui::backend::Backend>(
     }
 }
 
-fn ui(f: &mut Frame, tpu: &tpu::TpuState) {
+fn ui(f: &mut Frame, tpu: &tpu::TpuState, continuous_running: bool) {
     // Create main layout with title and content areas
     let main_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -121,8 +134,14 @@ fn ui(f: &mut Frame, tpu: &tpu::TpuState) {
         )
         .split(f.size());
 
-    // Title
-    let title = Paragraph::new("TPU Simulator - Press Space to tick, S to Step, Q to quit")
+    // Title with mode indicator
+    let mode_text = if continuous_running {
+        "TPU Simulator - RUNNING (Press B to stop) - Space to tick, S to Step, R to run, Q to quit"
+    } else {
+        "TPU Simulator - Press Space to tick, S to Step, R to run, Q to quit"
+    };
+
+    let title = Paragraph::new(mode_text)
         .style(Style::default().fg(Color::Cyan))
         .block(Block::default().borders(Borders::ALL));
     f.render_widget(title, main_chunks[0]);
