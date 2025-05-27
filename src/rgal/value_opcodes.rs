@@ -1,5 +1,5 @@
-use crate::shared::{Instruction, OperandValueType};
 use crate::rgal::Rule;
+use crate::shared::{Instruction, OperandValueType};
 use pest::Span;
 use pest::error::ErrorVariant;
 

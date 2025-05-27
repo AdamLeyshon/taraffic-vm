@@ -1,6 +1,6 @@
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use tls::shared::Register;
 use tls::rgal::parse_program;
+use tls::shared::Register;
 use tls::tpu::create_basic_tpu_config;
 
 fn add_benchmark(c: &mut Criterion) {

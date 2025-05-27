@@ -66,7 +66,7 @@ impl fmt::Display for TpuState {
         // fn format_u16_hex(value: u16) -> String {
         //     format!("{:04x}", value)
         // }
-        // 
+        //
         // // Helper function to format an array of u16 values
         // fn format_u16_array<const N: usize>(arr: &[u16; N]) -> String {
         //     let mut result = String::new();

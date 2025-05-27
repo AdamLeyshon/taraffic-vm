@@ -1,12 +1,12 @@
-use crate::shared::{Register, OperandValueType};
+use crate::shared::{OperandValueType, Register};
 use crate::tpu::{TPU, create_basic_tpu_config};
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
     use super::*;
-    use crate::shared::{AnalogPin, DigitalPin, Instruction};
     use crate::rgal;
+    use crate::shared::{AnalogPin, DigitalPin, Instruction};
+    use std::rc::Rc;
     use strum::IntoEnumIterator;
 
     #[test]
@@ -17,7 +17,9 @@ mod tests {
 
     #[test]
     fn test_single_instruction() {
-        let mut tpu = create_basic_tpu_config(vec![Rc::new(Instruction::PUSH(OperandValueType::Immediate(1)))]);
+        let mut tpu = create_basic_tpu_config(vec![Rc::new(Instruction::PUSH(
+            OperandValueType::Immediate(1),
+        ))]);
 
         tpu.tick();
 

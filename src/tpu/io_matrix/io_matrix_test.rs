@@ -1,4 +1,6 @@
-use crate::shared::{AnalogPin, DigitalPin, ExecuteResult, HaltReason, NetPacket, OperandValueType, Register};
+use crate::shared::{
+    AnalogPin, DigitalPin, ExecuteResult, HaltReason, NetPacket, OperandValueType, Register,
+};
 use crate::tpu::io_matrix::*;
 use crate::tpu::{TPU, TpuState, create_basic_tpu_config};
 
@@ -21,8 +23,8 @@ mod tests {
             ram: [0; TPU::RAM_SIZE],
             rom: vec![],
             network_address: 0x1,
-            incoming_packets: std::collections::VecDeque::new(),
-            outgoing_packets: std::collections::VecDeque::new(),
+            incoming_packets: VecDeque::new(),
+            outgoing_packets: VecDeque::new(),
             registers: [0; Register::COUNT],
 
             program_counter: 0,
@@ -83,7 +85,7 @@ mod tests {
         let result = op_dpw(&mut tpu, &target, &source);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.get_digital_pin(DigitalPin::Digital0), true);
-    
+
         // Test case 2: Set digital pin to LOW
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         let target = OperandValueType::Immediate(1); // Pin 1
@@ -91,7 +93,7 @@ mod tests {
         let result = op_dpw(&mut tpu, &target, &source);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.get_digital_pin(DigitalPin::Digital1), false);
-    
+
         // Test case 3: Set digital pin with register values
         let mut tpu = create_tpu_with_registers(0, 2, 1);
         let target = OperandValueType::Register(Register::X); // Pin 2 from X
@@ -99,7 +101,7 @@ mod tests {
         let result = op_dpw(&mut tpu, &target, &source);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.get_digital_pin(DigitalPin::Digital2), true);
-    
+
         // Test case 4: Error case - invalid pin number
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         let target = OperandValueType::Immediate(100); // Invalid pin
@@ -120,7 +122,7 @@ mod tests {
         let result = op_dpr(&mut tpu, &target, &source);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 1); // HIGH = 1
-    
+
         // Test case 2: Read digital pin (LOW)
         let pin_values = [(DigitalPin::Digital1, false)];
         let mut tpu = create_tpu_with_digital_pins(&pin_values);
@@ -129,7 +131,7 @@ mod tests {
         let result = op_dpr(&mut tpu, &target, &source);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 0); // LOW = 0
-    
+
         // Test case 3: Read digital pin with register value
         let pin_values = [(DigitalPin::Digital2, true)];
         let mut tpu = create_tpu_with_digital_pins(&pin_values);
@@ -139,7 +141,7 @@ mod tests {
         let result = op_dpr(&mut tpu, &target, &source);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 1); // HIGH = 1
-    
+
         // Test case 4: Error case - invalid pin number
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         let target = Register::A;
@@ -152,12 +154,12 @@ mod tests {
     fn test_op_apw() {
         // Test case 1: Set analog pin to a value
         let mut tpu = create_tpu_with_registers(0, 0, 0);
-        let target = OperandValueType::Immediate(0);  // Pin 0
+        let target = OperandValueType::Immediate(0); // Pin 0
         let source = OperandValueType::Immediate(42); // Value
         let result = op_apw(&mut tpu, &target, &source);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.get_analog_pin(AnalogPin::Analog0), 42);
-    
+
         // Test case 2: Set analog pin with register values
         let mut tpu = create_tpu_with_registers(0, 1, 255);
         let target = OperandValueType::Register(Register::X); // Pin 1 from X
@@ -165,7 +167,7 @@ mod tests {
         let result = op_apw(&mut tpu, &target, &source);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.get_analog_pin(AnalogPin::Analog1), 255);
-    
+
         // Test case 3: Error case - invalid pin number
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         let target = OperandValueType::Immediate(100); // Invalid pin
@@ -186,7 +188,7 @@ mod tests {
         let result = op_apr(&mut tpu, &target, &source);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 42);
-    
+
         // Test case 2: Read analog pin with register value
         let pin_values = [(AnalogPin::Analog1, 255)];
         let mut tpu = create_tpu_with_analog_pins(&pin_values);
@@ -196,7 +198,7 @@ mod tests {
         let result = op_apr(&mut tpu, &target, &source);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 255);
-    
+
         // Test case 3: Error case - invalid pin number
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         let target = Register::A;
@@ -211,7 +213,7 @@ mod tests {
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         let target = Register::A;
         tpu.write_register(Register::A, 0x2); // Target address
-        let data = OperandValueType::Immediate(42);  // Data
+        let data = OperandValueType::Immediate(42); // Data
         let result = op_xmit(&mut tpu, &target, &data);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.tpu_state.outgoing_packets.len(), 1);
@@ -219,7 +221,7 @@ mod tests {
         assert_eq!(packet.sender, 0x1); // From our network address
         assert_eq!(packet.target, 0x2); // To the target address
         assert_eq!(packet.data, 42); // With the data
-    
+
         // Test case 2: Send a packet with register values
         let mut tpu = create_tpu_with_registers(0, 0x3, 24);
         let target = Register::X; // Target address from X
@@ -247,7 +249,7 @@ mod tests {
         assert_eq!(tpu.read_register(Register::X), 0x2); // Sender in X
         assert_eq!(tpu.read_register(Register::Y), 42); // Data in Y
         assert_eq!(tpu.tpu_state.incoming_packets.len(), 0); // Packet removed from queue
-    
+
         // Test case 2: Receive when no packets are available
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         let result = op_recv(&mut tpu);
@@ -263,7 +265,7 @@ mod tests {
         let result = op_txbs(&mut tpu);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::X), 0); // Empty buffer
-    
+
         // Test case 2: Get transmit buffer size (with packets)
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         // Add some outgoing packets
@@ -281,7 +283,7 @@ mod tests {
         let result = op_rxbs(&mut tpu);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::X), 0); // Empty buffer
-    
+
         // Test case 2: Get receive buffer size (with packets)
         let incoming = [
             NetPacket {
@@ -316,19 +318,19 @@ mod tests {
         // Expect it to be true because by default the pin is configured as an output
         // So you can't write to it
         assert_eq!(tpu.get_digital_pin(DigitalPin::Digital0), true);
-    
+
         // Test APW operation
-        let target = OperandValueType::Immediate(0);  // Pin 0
+        let target = OperandValueType::Immediate(0); // Pin 0
         let source = OperandValueType::Immediate(42); // Value
         op_apw(&mut tpu, &target, &source);
         assert_eq!(tpu.get_analog_pin(AnalogPin::Analog0), 42);
-    
+
         // Test XMIT and TXBS operations
         tpu.write_register(Register::A, 0x2); // Target address
         let target = Register::A;
-        let data = OperandValueType::Immediate(42);  // Data
+        let data = OperandValueType::Immediate(42); // Data
         op_xmit(&mut tpu, &target, &data);
-    
+
         op_txbs(&mut tpu);
         assert_eq!(tpu.read_register(Register::X), 1); // One packet in buffer
     }
@@ -403,21 +405,21 @@ mod tests {
         let result = op_dpww(&mut tpu, &value);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.get_digital_pins(), 0);
-    
+
         // Test case 2: Set all pins to 1
         let all_pins_mask = (1 << DigitalPin::COUNT) - 1;
         let value = OperandValueType::Immediate(all_pins_mask);
         let result = op_dpww(&mut tpu, &value);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.get_digital_pins(), all_pins_mask);
-    
+
         // Test case 3: Set alternating pins
         let alternating_mask = 0b01010101 & all_pins_mask; // Only use valid pins
         let value = OperandValueType::Immediate(alternating_mask);
         let result = op_dpww(&mut tpu, &value);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.get_digital_pins(), alternating_mask);
-    
+
         // Test case 4: Set pins using register value
         let mut tpu = create_tpu_with_registers(0, alternating_mask, 0);
         let value = OperandValueType::Register(Register::X);
@@ -437,7 +439,7 @@ mod tests {
         let result = op_dprw(&mut tpu, &target);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 0);
-    
+
         // Test case 2: Read all pins (all HIGH)
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         for pin in DigitalPin::iter() {
@@ -448,7 +450,7 @@ mod tests {
         let result = op_dprw(&mut tpu, &target);
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), all_pins_mask);
-    
+
         // Test case 3: Read all pins (alternating)
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         let all_pins_mask = (1 << DigitalPin::COUNT) - 1;

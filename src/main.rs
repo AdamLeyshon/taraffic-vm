@@ -1,5 +1,5 @@
-mod shared;
 mod rgal;
+mod shared;
 mod tpu;
 
 use crate::shared::{AnalogPin, DigitalPin, Register};
@@ -13,7 +13,6 @@ use ratatui::{
     Frame, Terminal,
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
-
     widgets::{Block, Borders, Paragraph},
 };
 use std::{
@@ -89,7 +88,7 @@ fn run_app<B: ratatui::backend::Backend>(
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
 
-        if crossterm::event::poll(timeout)? {
+        if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('q') => return Ok(()),
@@ -125,7 +124,7 @@ fn ui(f: &mut Frame, tpu: &tpu::TpuState) {
         .split(f.size());
 
     // Title
-    let title = Paragraph::new("TPU Simulator - Press SPACE to tick, S to Step, Q to quit")
+    let title = Paragraph::new("TPU Simulator - Press Space to tick, S to Step, Q to quit")
         .style(Style::default().fg(Color::Cyan))
         .block(Block::default().borders(Borders::ALL));
     f.render_widget(title, main_chunks[0]);

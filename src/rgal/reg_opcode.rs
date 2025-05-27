@@ -1,5 +1,5 @@
-use crate::shared::{Instruction, OperandValueType};
 use crate::rgal::Rule;
+use crate::shared::{Instruction, OperandValueType};
 use pest::Span;
 use pest::error::ErrorVariant;
 
@@ -24,7 +24,7 @@ pub fn parse_single_register_operand_opcodes(
         "INC" => Ok(Instruction::INC(register_operand)),
         "DEC" => Ok(Instruction::DEC(register_operand)),
         "DPRW" => Ok(Instruction::DPRW(register_operand)),
-        
+
         _ => Err(pest::error::Error::new_from_span(
             ErrorVariant::CustomError {
                 message: "Failed to parse instruction".into(),

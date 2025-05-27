@@ -1,12 +1,14 @@
-use crate::shared::{Instruction, Register, OperandValueType, ExecuteResult, HaltReason};
 use crate::rgal::parse_program;
+use crate::shared::Register;
 use crate::tpu::flow::*;
-use crate::tpu::{TPU, TpuState, create_basic_tpu_config};
+use crate::tpu::{TPU, TpuState};
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shared::{AnalogPin, DigitalPin, Instruction, OperandValueType, ExecuteResult, HaltReason};
+    use crate::shared::{
+        AnalogPin, DigitalPin, ExecuteResult, HaltReason, Instruction, OperandValueType,
+    };
     use crate::tpu::ExecutionState;
     use strum::EnumCount;
 
@@ -62,7 +64,7 @@ mod tests {
         let result = op_jmp(&mut tpu, &target);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Jump with register operand
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 2);
@@ -70,7 +72,7 @@ mod tests {
         let result = op_jmp(&mut tpu, &target);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC is now at line 2
-    
+
         // Test case 3: Error case - jump to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         let target = OperandValueType::Immediate(10); // Invalid line
@@ -89,7 +91,7 @@ mod tests {
         let result = op_bez(&mut tpu, &target, &Register::A);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when value is not zero
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::A, 5);
@@ -98,7 +100,7 @@ mod tests {
         assert_eq!(result, ExecuteResult::PCModified); // No error
         // PC increments by 1 to the next line because the branch was not taken
         assert_eq!(tpu.tpu_state.program_counter, 1); // PC remains unchanged
-    
+
         // Test case 3: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::A, 0);
@@ -128,7 +130,7 @@ mod tests {
         let result = op_bnz(&mut tpu, &target, &Register::A);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when value is zero
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::A, 0);
@@ -136,7 +138,7 @@ mod tests {
         let result = op_bnz(&mut tpu, &target, &Register::A);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 1); // PC advance to next line
-    
+
         // Test case 3: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::A, 5);
@@ -158,7 +160,7 @@ mod tests {
         let result = op_beq(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when values are not equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -169,7 +171,7 @@ mod tests {
         assert_eq!(result, ExecuteResult::PCModified); // No error
         // PC increments by 1 to the next line because the branch was not taken
         assert_eq!(tpu.tpu_state.program_counter, 1);
-    
+
         // Test case 3: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -193,7 +195,7 @@ mod tests {
         let result = op_bne(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when values are equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -203,7 +205,7 @@ mod tests {
         let result = op_bne(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 1); // PC advance to next line
-    
+
         // Test case 3: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -227,7 +229,7 @@ mod tests {
         let result = op_bge(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Branch when values are equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -237,7 +239,7 @@ mod tests {
         let result = op_bge(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 3: Don't branch when first value is less than second
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -247,7 +249,7 @@ mod tests {
         let result = op_bge(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 1); // PC advance to next line
-    
+
         // Test case 4: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 10);
@@ -271,7 +273,7 @@ mod tests {
         let result = op_ble(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Branch when values are equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -281,7 +283,7 @@ mod tests {
         let result = op_ble(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 3: Don't branch when first value is greater than second
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 10);
@@ -291,7 +293,7 @@ mod tests {
         let result = op_ble(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 1); // PC advance to next line
-    
+
         // Test case 4: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -315,7 +317,7 @@ mod tests {
         let result = op_bgt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when values are equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -325,7 +327,7 @@ mod tests {
         let result = op_bgt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 1); // PC advance to next line
-    
+
         // Test case 3: Don't branch when first value is less than second
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -335,7 +337,7 @@ mod tests {
         let result = op_bgt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 1); // PC advance to next line
-    
+
         // Test case 4: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 10);
@@ -359,7 +361,7 @@ mod tests {
         let result = op_blt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when values are equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -369,7 +371,7 @@ mod tests {
         let result = op_blt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 1); // PC advance to next line
-    
+
         // Test case 3: Don't branch when first value is greater than second
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 10);
@@ -379,7 +381,7 @@ mod tests {
         let result = op_blt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 1); // PC advance to next line
-    
+
         // Test case 4: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         tpu.write_register(Register::X, 5);
@@ -400,7 +402,7 @@ mod tests {
         let result = op_jpr(&mut tpu, &target);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Jump with register operand
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 2);
@@ -408,7 +410,7 @@ mod tests {
         let result = op_jpr(&mut tpu, &target);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 3); // PC is now at line 3
-    
+
         // Test case 3: Error case - jump to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         let target = OperandValueType::Immediate(10); // Invalid jump
@@ -427,7 +429,7 @@ mod tests {
         let result = op_brez(&mut tpu, &target, &Register::A);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when value is not zero
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::A, 5);
@@ -435,7 +437,7 @@ mod tests {
         let result = op_brez(&mut tpu, &target, &Register::A);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC advances to next line
-    
+
         // Test case 3: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::A, 0);
@@ -454,7 +456,7 @@ mod tests {
         let result = op_brnz(&mut tpu, &target, &Register::A);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when value is zero
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::A, 0);
@@ -462,7 +464,7 @@ mod tests {
         let result = op_brnz(&mut tpu, &target, &Register::A);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC advances to next line
-    
+
         // Test case 3: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::A, 5);
@@ -483,7 +485,7 @@ mod tests {
         let result = op_breq(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when values are not equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -493,7 +495,7 @@ mod tests {
         let result = op_breq(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC remains unchanged
-    
+
         // Test case 3: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -516,7 +518,7 @@ mod tests {
         let result = op_brne(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when values are equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -526,7 +528,7 @@ mod tests {
         let result = op_brne(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC advances to next line
-    
+
         // Test case 3: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -549,7 +551,7 @@ mod tests {
         let result = op_brge(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Branch when values are equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -559,7 +561,7 @@ mod tests {
         let result = op_brge(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 3: Don't branch when first value is less than second
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -569,7 +571,7 @@ mod tests {
         let result = op_brge(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC advances to next line
-    
+
         // Test case 4: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 10);
@@ -592,7 +594,7 @@ mod tests {
         let result = op_brle(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Branch when values are equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -602,7 +604,7 @@ mod tests {
         let result = op_brle(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 3: Don't branch when first value is greater than second
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 10);
@@ -612,7 +614,7 @@ mod tests {
         let result = op_brle(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC advances to next line
-    
+
         // Test case 4: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -635,7 +637,7 @@ mod tests {
         let result = op_brgt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when values are equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -645,7 +647,7 @@ mod tests {
         let result = op_brgt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC advances to next line
-    
+
         // Test case 3: Don't branch when first value is less than second
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -655,7 +657,7 @@ mod tests {
         let result = op_brgt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC advances to next line
-    
+
         // Test case 4: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 10);
@@ -678,7 +680,7 @@ mod tests {
         let result = op_brlt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
-    
+
         // Test case 2: Don't branch when values are equal
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -688,7 +690,7 @@ mod tests {
         let result = op_brlt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC advances to next line
-    
+
         // Test case 3: Don't branch when first value is greater than second
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 10);
@@ -698,7 +700,7 @@ mod tests {
         let result = op_brlt(&mut tpu, &target, &Register::X, &value);
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC advances to next line
-    
+
         // Test case 4: Error case - branch to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 5);
@@ -720,7 +722,7 @@ mod tests {
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
         assert_eq!(tpu.tpu_state.stack.len(), 1); // Stack has one item
         assert_eq!(tpu.tpu_state.stack[0], 0); // Return address is 0
-    
+
         // Test case 2: Call subroutine with register operand
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 1);
         tpu.write_register(Register::X, 4);
@@ -730,7 +732,7 @@ mod tests {
         assert_eq!(tpu.tpu_state.program_counter, 4); // PC is now at line 4
         assert_eq!(tpu.tpu_state.stack.len(), 1); // Stack has one item
         assert_eq!(tpu.tpu_state.stack[0], 1); // Return address is 1
-    
+
         // Test case 3: Error case - call to an invalid line
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 0);
         let target = OperandValueType::Immediate(10); // Invalid line
@@ -750,7 +752,7 @@ mod tests {
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 1); // PC is now at return address
         assert_eq!(tpu.tpu_state.stack.len(), 0); // Stack is empty
-    
+
         // Test case 2: Return from nested subroutine
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 4);
         tpu.push(1); // Push first return address
@@ -759,7 +761,7 @@ mod tests {
         assert_eq!(result, ExecuteResult::PCModified); // No error
         assert_eq!(tpu.tpu_state.program_counter, 2); // PC is now at second return address
         assert_eq!(tpu.tpu_state.stack.len(), 1); // Stack has one item left
-    
+
         // Test case 3: Error case - return with empty stack
         let mut tpu = create_tpu_with_pc(LOOP_PROGRAM, 4);
         let result = op_rts(&mut tpu);

@@ -1,6 +1,6 @@
-pub mod decode;
 #[cfg(test)]
 mod alu_test;
+pub mod decode;
 
 use crate::shared::{ExecuteResult, HaltReason, OperandValueType, Register};
 use crate::tpu::TPU;

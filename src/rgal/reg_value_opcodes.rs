@@ -1,5 +1,5 @@
-use crate::shared::{Instruction, OperandValueType};
 use crate::rgal::Rule;
+use crate::shared::{Instruction, OperandValueType};
 use pest::Span;
 use pest::error::ErrorVariant;
 
@@ -9,8 +9,7 @@ pub fn parse_register_value_operand_opcodes(
     register: OperandValueType,
     value: OperandValueType,
 ) -> Result<Instruction, pest::error::Error<Rule>> {
-    let OperandValueType::Register(register) = register
-    else {
+    let OperandValueType::Register(register) = register else {
         return Err(pest::error::Error::new_from_span(
             ErrorVariant::CustomError {
                 message: "Expected a register and value operand".into(),
@@ -25,7 +24,7 @@ pub fn parse_register_value_operand_opcodes(
         "LDR" => Ok(Instruction::LDR(register, value)),
         "DPR" => Ok(Instruction::DPR(register, value)),
         "APR" => Ok(Instruction::APR(register, value)),
-        
+
         _ => Err(pest::error::Error::new_from_span(
             ErrorVariant::CustomError {
                 message: "Failed to parse instruction".into(),

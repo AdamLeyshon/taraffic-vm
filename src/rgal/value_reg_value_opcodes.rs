@@ -1,5 +1,5 @@
-use crate::shared::{Instruction, OperandValueType};
 use crate::rgal::Rule;
+use crate::shared::{Instruction, OperandValueType};
 use pest::Span;
 use pest::error::ErrorVariant;
 
@@ -32,7 +32,7 @@ pub fn parse_value_register_value_operand_opcodes(
         "BRLE" => Ok(Instruction::BRLE(value_a, register, value_b)),
         "BRGT" => Ok(Instruction::BRGT(value_a, register, value_b)),
         "BRLT" => Ok(Instruction::BRLT(value_a, register, value_b)),
-        
+
         _ => Err(pest::error::Error::new_from_span(
             ErrorVariant::CustomError {
                 message: "Failed to parse instruction".into(),

@@ -1,5 +1,5 @@
-use crate::shared::{OperandValueType, DecodeResult};
-use crate::tpu::{TPU};
+use crate::shared::{DecodeResult, OperandValueType};
+use crate::tpu::TPU;
 
 // Increment operations
 pub fn decode_op_inc() -> DecodeResult {
@@ -94,7 +94,6 @@ pub fn decode_op_slc(shift: &OperandValueType) -> DecodeResult {
         call_every_cycle: false,
     }
 }
-
 
 pub fn decode_op_slr(shift: &OperandValueType) -> DecodeResult {
     let cycles = TPU::check_operand_cost(&[shift]) + 2;

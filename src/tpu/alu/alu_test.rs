@@ -308,13 +308,23 @@ mod tests {
         // Test case 1: Basic shift right into register
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         tpu.write_register(Register::R1, 0b10000000);
-        let result = op_slr(&mut tpu, &Register::A, &Register::R1, &OperandValueType::Immediate(2));
+        let result = op_slr(
+            &mut tpu,
+            &Register::A,
+            &Register::R1,
+            &OperandValueType::Immediate(2),
+        );
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 0b00100000);
 
         // Test case 2: Shift right with registers
         let mut tpu = create_tpu_with_registers(0, 0b10000000, 2);
-        let result = op_slr(&mut tpu, &Register::A, &Register::X, &OperandValueType::Register(Register::Y));
+        let result = op_slr(
+            &mut tpu,
+            &Register::A,
+            &Register::X,
+            &OperandValueType::Register(Register::Y),
+        );
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 0b00100000);
     }
@@ -351,20 +361,35 @@ mod tests {
         // Test case 1: Basic rotate left
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         tpu.write_register(Register::R1, 0b1000000000000001);
-        let result = op_rol(&mut tpu, &Register::A, &Register::R1, &OperandValueType::Immediate(1));
+        let result = op_rol(
+            &mut tpu,
+            &Register::A,
+            &Register::R1,
+            &OperandValueType::Immediate(1),
+        );
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 0b11);
 
         // Test case 2: Rotate left with registers
         let mut tpu = create_tpu_with_registers(0, 0b1000000000000001, 1);
-        let result = op_rol(&mut tpu, &Register::A, &Register::X, &OperandValueType::Register(Register::Y));
+        let result = op_rol(
+            &mut tpu,
+            &Register::A,
+            &Register::X,
+            &OperandValueType::Register(Register::Y),
+        );
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 0b11);
 
         // Test case 3: Rotate left by 8 places
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         tpu.write_register(Register::R1, 0b0000_0001_1000_0000);
-        let result = op_rol(&mut tpu, &Register::A, &Register::R1, &OperandValueType::Immediate(9));
+        let result = op_rol(
+            &mut tpu,
+            &Register::A,
+            &Register::R1,
+            &OperandValueType::Immediate(9),
+        );
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 0b11);
     }
@@ -374,20 +399,35 @@ mod tests {
         // Test case 1: Basic rotate right
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         tpu.write_register(Register::R1, 0b1);
-        let result = op_ror(&mut tpu, &Register::A, &Register::R1, &OperandValueType::Immediate(1));
+        let result = op_ror(
+            &mut tpu,
+            &Register::A,
+            &Register::R1,
+            &OperandValueType::Immediate(1),
+        );
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 32768);
 
         // Test case 2: Rotate right with registers
         let mut tpu = create_tpu_with_registers(0, 0b1, 1);
-        let result = op_ror(&mut tpu, &Register::A, &Register::X, &&OperandValueType::Register(Register::Y));
+        let result = op_ror(
+            &mut tpu,
+            &Register::A,
+            &Register::X,
+            &&OperandValueType::Register(Register::Y),
+        );
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 32768);
 
         // Test case 3: Rotate right by more than 7 places (should be modulo 8)
         let mut tpu = create_tpu_with_registers(0, 0, 0);
         tpu.write_register(Register::R1, 0b1000000000000001);
-        let result = op_ror(&mut tpu, &Register::A, &Register::R1, &OperandValueType::Immediate(1));
+        let result = op_ror(
+            &mut tpu,
+            &Register::A,
+            &Register::R1,
+            &OperandValueType::Immediate(1),
+        );
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_register(Register::A), 49152);
     }
