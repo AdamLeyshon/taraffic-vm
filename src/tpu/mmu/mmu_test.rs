@@ -84,9 +84,7 @@ mod tests {
         assert_eq!(tpu.read_register(Register::R1), 42); // R1 now has R0's value
         assert_eq!(tpu.read_register(Register::R0), 0); // R0 is now zero
     }
-
-    // test_op_str is removed as the function no longer exists
-
+    
     #[test]
     fn test_op_ldr() {
         // Test case 1: Load constant into register
@@ -106,14 +104,33 @@ mod tests {
         assert_eq!(tpu.read_register(Register::A), 30); // A now has Y's value
     }
 
-    // test_op_ldm is removed as the function no longer exists
+    #[test]
+    fn test_op_ldm() {
+        // Test case 1: Load from memory into register using immediate address
+        let ram_values = [(7, 42)];
+        let mut tpu = create_tpu_with_ram(&ram_values);
+        let result = op_ldm(
+            &mut tpu,
+            &Register::A,
+            &OperandValueType::Immediate(7), // Address
+        );
+        assert_eq!(result, ExecuteResult::PCAdvance); // No error
+        assert_eq!(tpu.read_register(Register::A), 42); // A now has the value from memory
 
-    // test_op_lda is removed as the function no longer exists
-
-    // test_op_ldx is removed as the function no longer exists
-
-    // test_op_ldxi is removed as the function no longer exists
-
+        // Test case 2: Load from memory using register address
+        let ram_values = [(9, 99)];
+        let mut tpu = create_tpu_with_ram(&ram_values);
+        tpu.write_register(Register::X, 9); // Address in X
+        let result = op_ldm(
+            &mut tpu,
+            &Register::Y,
+            &OperandValueType::Register(Register::X), // Address from X
+        );
+        assert_eq!(result, ExecuteResult::PCAdvance); // No error
+        assert_eq!(tpu.read_register(Register::Y), 99); // Y now has the value from memory
+        assert_eq!(tpu.read_register(Register::X), 9); // X remains unchanged
+    }
+    
     #[test]
     fn test_op_stm() {
         // Test case 1: Store constant into memory
@@ -136,11 +153,7 @@ mod tests {
         assert_eq!(result, ExecuteResult::PCAdvance); // No error
         assert_eq!(tpu.read_ram(9), 10); // Memory at address 9 now has A's value
     }
-
-    // test_op_sta is removed as the function no longer exists
-
-    // test_op_stx is removed as the function no longer exists
-
+    
     #[test]
     fn test_op_stmo() {
         // Test case 1: Store register into memory with offset

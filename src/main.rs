@@ -35,10 +35,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         r#"
         LDR A, 0
         LDR X, 0b100000001
-        
+        SMOI 0, X, Y
+        BLE 5, Y, 129
+        LDR Y, 0
         DPWW X
         ROL X, X, 1
-        JMP 1"#,
+        JMP 2"#,
     )
     .unwrap();
 

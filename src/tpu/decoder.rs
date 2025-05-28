@@ -47,6 +47,7 @@ pub fn decode(instruction: &Rc<Instruction>) -> DecodeResult {
         Instruction::RCY(_, _) => mmu::decode::decode_op_rcy(),
         Instruction::RMV(_, _) => mmu::decode::decode_op_rmv(),
         Instruction::LDR(target, source) => mmu::decode::decode_op_ldr(target, source),
+        Instruction::LDM(target, source) => mmu::decode::decode_op_ldm(target, source),
         Instruction::LDO(_, source, _) => mmu::decode::decode_op_ldo(source),
         Instruction::LDOI(_, source, _) => mmu::decode::decode_op_ldoi(source),
         Instruction::STM(_, source) => mmu::decode::decode_op_stm(source),

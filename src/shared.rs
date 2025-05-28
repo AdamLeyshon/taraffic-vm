@@ -109,9 +109,11 @@ pub enum Instruction {
     RMV(Register, Register),
     /// Load Register
     LDR(Register, OperandValueType),
-    /// Load Register w/Offset
+    /// Load Register from Memory
+    LDM(Register, OperandValueType),
+    /// Load Register from Memory w/Offset
     LDO(Register, OperandValueType, Register),
-    /// Load Register w/Offset+Inc
+    /// Load Register from Memory w/Offset+Inc
     LDOI(Register, OperandValueType, Register),
     /// Store Memory
     STM(OperandValueType, OperandValueType),

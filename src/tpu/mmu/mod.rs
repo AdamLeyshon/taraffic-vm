@@ -99,6 +99,18 @@ pub fn op_ldr(tpu: &mut TPU, target: &Register, source: &OperandValueType) -> Ex
     ExecuteResult::PCAdvance
 }
 
+/// Load a value into a register from Memory
+pub fn op_ldm(tpu: &mut TPU, target: &Register, source: &OperandValueType) -> ExecuteResult {
+    let address = tpu.get_operand_value(source);
+    let value = tpu.read_ram(address as usize);
+
+    // Store the value in the register
+    tpu.write_register(*target, value);
+
+    // Return ExecuteResult::Continue to indicate no error
+    ExecuteResult::PCAdvance
+}
+
 /// Load Register with Offset
 pub fn op_ldo(
     tpu: &mut TPU,

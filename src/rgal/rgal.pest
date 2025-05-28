@@ -43,7 +43,7 @@ two_reg_any_operand_instruction = {
     two_reg_any_operand_instructions ~ register ~ "," ~ any_value
 }
 
-two_reg_any_operand_instructions = { "PEEK" | "XMIT" | "LDR" | "DPR" | "APR" }
+two_reg_any_operand_instructions = { "PEEK" | "XMIT" | "LDR" | "LDM" | "DPR" | "APR" }
 
 // Two operands (any value, register)
 two_any_reg_operand_instruction = {

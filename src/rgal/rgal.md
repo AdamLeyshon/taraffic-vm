@@ -101,7 +101,7 @@ For example:
 | BEQ    | `#`, `R`, `#` | Branch to operand 1 if register 2 is equal to operand 3                 | 1-4         | 
 | BNE    | `#`, `R`, `#` | Branch to operand 1 if register 2 is not equal to operand 3             | 1-4         |
 | BGE    | `#`, `R`, `#` | Branch to operand 1 if register 2 is greater than or equal to operand 3 | 1-4         |
-| BLE    | `#`, `R`, `#` | Branch to operand 1 if register 2 is less than or equal to operand 3    | 1-4         |
+| BLE    | `#`, `R`, `#` | Branch to operand 1 if register 2 is less than or equal to operand 3   | 1-4         |
 | BGT    | `#`, `R`, `#` | Branch to operand 1 if register is greater than operand 3               | 1-4         |
 | BLT    | `#`, `R`, `#` | Branch to operand 1 if register 2 is less than operand 3                | 1-4         |
 
@@ -181,8 +181,9 @@ stored in the accumulator.
 |--------|---------------|-----------------------------------------|-------------------------------------------------------------------------------------------------------|-------------|
 | RCY    | `R`, `R`      | Register Copy                           | Copy the value of operand 2 into operand 1,                                                           | 2           |
 | RMV    | `R`, `R`      | Register Move                           | Move the value of operand 2 into operand 1, leaving the source register as zero                       | 3           |
-| LDR    | `R`, `#`      | Load Register                           | Load value from operand into the register `R`                                                         |             |
-| LDO    | `R`, `#`, `O` | Load Register with Offset               | Load value from address operand `#` plus offset `O` into register `R`                                 |             |
+| LDR    | `R`, `#`      | Load Register Immediate                 | Load value from operand into the register `R`                                                         |             |
+| LDM    | `R` , `#`     | Load Register from Address              | Load value from address operand into register `R`                                                     |             |                                                     
+| LDO    | `R`, `#`, `O` | Load Register from Address with Offset  | Load value from address operand `#` plus offset `O` into register `R`                                 |             |
 | LDOI   | `R`, `#`, `O` | Load Register With Offset and Increment | Load value from address operand `#` plus offset from register `O` into register `R` and increment `O` |             |
 | STM    | `#`, `#`      | Store To Memory                         | Store value from operand 2 `#` into address operand 1                                                 |             |
 | STMO   | `#`, `#`, `R` | Store To Memory With Offset             | Store value from operand 2 `#` into address operand 1                                                 |             |

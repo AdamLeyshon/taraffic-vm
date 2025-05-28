@@ -22,6 +22,7 @@ pub fn parse_register_value_operand_opcodes(
         "PEEK" => Ok(Instruction::PEEK(register, value)),
         "XMIT" => Ok(Instruction::XMIT(register, value)),
         "LDR" => Ok(Instruction::LDR(register, value)),
+        "LDM" => Ok(Instruction::LDM(register, value)),
         "DPR" => Ok(Instruction::DPR(register, value)),
         "APR" => Ok(Instruction::APR(register, value)),
 

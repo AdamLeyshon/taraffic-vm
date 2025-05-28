@@ -73,6 +73,12 @@ pub fn decode_op_ldr(_: &Register, source: &OperandValueType) -> DecodeResult {
         call_every_cycle: false,
     }
 }
+pub fn decode_op_ldm(_: &Register, _: &OperandValueType) -> DecodeResult {
+    DecodeResult {
+        cycles: 5,
+        call_every_cycle: false,
+    }
+}
 
 pub fn decode_op_ldo(source: &OperandValueType) -> DecodeResult {
     // Two cycles needed minimum

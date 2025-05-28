@@ -42,6 +42,7 @@ pub fn execute(tpu: &mut TPU, instruction: &Instruction, _: u16) -> ExecuteResul
         Instruction::RCY(target, source) => mmu::op_rcy(tpu, target, source),
         Instruction::RMV(target, source) => mmu::op_rmv(tpu, target, source),
         Instruction::LDR(target, source) => mmu::op_ldr(tpu, target, source),
+        Instruction::LDM(target, source) => mmu::op_ldm(tpu, target, source),
         Instruction::LDO(target, source, offset) => mmu::op_ldo(tpu, target, source, offset),
         Instruction::LDOI(target, source, offset) => mmu::op_ldoi(tpu, target, source, offset),
         Instruction::STM(target, source) => mmu::op_stm(tpu, target, source),
